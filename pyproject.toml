@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools >= 64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pilea"
+authors = [
+    {name = "Xi Chen", email = "xinehc@gmail.com"},
+]
+readme = "README.md"
+description = "Pilea: profiling bacterial growth dynamics from metagenomes with sketching"
+license = {file = "LICENSE"}
+dynamic = ["version"]
+requires-python = ">=3.7"
+dependencies = [
+    "mmh3",
+    "tqdm",
+    "biopython",
+    "scikit-learn",
+    "rich_argparse",
+    "threadpoolctl"
+]
+
+[project.scripts]
+pilea = "pilea.cli:cli"
+
+[tool.setuptools.dynamic]
+version = {attr = "pilea.__version__"}
