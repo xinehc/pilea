@@ -35,10 +35,19 @@ class GrowthProfiler:
         else:
             os.makedirs(outdir, exist_ok=True)
 
-        for file in files:
-            if not os.path.isfile(file):
-                log.critical(f'File <{file}> does not exist.')
-                sys.exit(2)
+        if not os.path.isdir(database):
+            log.critical(f'Database directory <{database}> does not exist.')
+            sys.exit(2)
+        else:
+            for file in ['parameter.tab', 'taxonomy.tab', 'sketch.uni', 'sketch.dup', 'sketch.kmc_pre', 'sketch.kmc_suf']:
+                if not os.path.isfile(f'{database}/{file}'):
+                    log.critical(f'File <{file}> is missing from database directory <{database}>.')
+                    sys.exit(2)
+
+            for file in files:
+                if not os.path.isfile(file):
+                    log.critical(f'File <{file}> does not exist.')
+                    sys.exit(2)
 
         ## determine file format
         samples = [re.sub('.gz$', '', os.path.basename(file)) for file in sorted(files)]
