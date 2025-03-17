@@ -54,4 +54,4 @@ class ZTP:
             weights = R.sum(axis=0) / self.n
 
         bic = -2 * logl + (2 * components - 1) * np.log(len(self.x))
-        return lmds, weights, bic
+        return lmds, weights / weights.sum(), bic
