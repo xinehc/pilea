@@ -12,7 +12,7 @@ from collections import defaultdict
 from functools import partial
 from itertools import chain
 from sklearn.linear_model import RANSACRegressor
-from scipy.stats import median_abs_deviation
+from scipy.stats import median_abs_deviation, iqr
 
 from .log import log
 from .kmc import KMC
@@ -111,7 +111,7 @@ class GrowthProfiler:
 
             ## record kmers' information
             vset = kset.get(accession)
-            data.append([sample, *accession2info.get(accession), [(z[1], kcnt.get(x)) for x in vset for y in kmer2accession.get(x) if (z := y.split('|', 1))[0] == accession]])
+            data.append([sample, *accession2info.get(accession), [(z[1], kcnt.get(x)) for x in sorted(vset) for y in kmer2accession.get(x) if (z := y.split('|', 1))[0] == accession]])
 
             ## update by set subtraction
             kset = {key: newval for key, val in kset.items() if (len(newval := val - vset) / accession2info.get(key)[-1]) > min_cont}
@@ -153,7 +153,7 @@ class GrowthProfiler:
             ):
                 return row[:3] + [depth, dispersion, containment, observations]
 
-    def parse(self, max_disp=25, min_dept=5, min_cont=0.5):
+    def parse(self, max_disp=np.inf, min_dept=5, min_cont=0.5):
         '''
         Parse and filter outputs of KMC.
         '''
@@ -195,23 +195,33 @@ class GrowthProfiler:
 
     @staticmethod
     def _fit(observation, components, max_iter, tol):
-        Y = []
-        for x in observation:
-            r = []
-            for n in range(1, components + 1):
-                r.append(ZTP(x=x).fit(components=n, max_iter=max_iter, tol=tol))
-            lmds, weights, _ = sorted(r, key=lambda x: x[-1])[0]
-            Y.append(lmds[np.argmax(weights)])
+        def _sample(u, seed):
+            rng = np.random.RandomState(seed)
+            return np.log2(sorted(rng.choice(y, p=p) for y, p in u))
 
-        Y = np.log2(sorted(Y))
-        X = np.asarray(range(len(Y))).reshape(-1, 1)
-        return [2 ** (RANSACRegressor(residual_threshold = median_abs_deviation(Y) / 5, random_state=i).fit(X, Y).estimator_.coef_[0] * (len(Y) - 1)) for i in range(100)]
+        u, v = [], []
+        for x in observation:
+            fits = [ZTP(x=x).fit(components=n, max_iter=max_iter, tol=tol) for n in range(1, components + 1)]
+            lmds, weights, _ = sorted(fits, key=lambda x: x[-1])[0]
+            u.append((lmds, weights))
+
+        N = len(u)
+        X = np.asarray(range(N)).reshape(-1, 1)
+        for i in range(100):
+            Y = _sample(u, seed=i)
+            R = median_abs_deviation(Y) / 5
+            v.append(2 ** (RANSACRegressor(residual_threshold=R, random_state=i).fit(X, Y).estimator_.coef_[0] * (N - 1)))
+
+        if iqr(v, rng=(10, 90)) < 1:
+            Y = np.log2(sorted(y[np.argmax(p)] for y, p in u))
+            R = median_abs_deviation(Y) / 5
+            return np.median([2 ** (RANSACRegressor(residual_threshold=R, random_state=i).fit(X, Y).estimator_.coef_[0] * (N - 1)) for i in range(100)])
 
     def fit(self, components=5, max_iter=np.inf, tol=1e-5):
         log.info('Fitting counts ...')
         fun = partial(self._fit, components=components, max_iter=max_iter, tol=tol)
         for row, ptr in zip(self.data, process_map(fun, [row[-1] for row in self.data], max_workers=self.threads, chunksize=1, leave=False)):
-            row[-1] = np.median(ptr) if median_abs_deviation(ptr) < 0.5 else None
+            row[-1] = ptr
 
     def write(self):
         with open(f'{self.outdir}/output.tsv', 'w') as f:
@@ -221,7 +231,7 @@ class GrowthProfiler:
                     f.write('\t'.join(row[:3] + [f'{x:.4f}' for x in row[3:]]) + '\n')
         log.info('Done.')
 
-def profile(files, outdir, database, force=False, single=False, max_disp=25, min_dept=5, min_cont=0.5, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
+def profile(files, outdir, database, force=False, single=False, max_disp=np.inf, min_dept=5, min_cont=0.5, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
     '''
     Profile bacterial growth dynamics.
     '''

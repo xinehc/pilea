@@ -167,7 +167,7 @@ def parser_profile(parser):
         '--max-disp',
         metavar='FLOAT',
         type=float,
-        default=25,
+        default=np.inf,
         help='Max. median dispersion of counts.')
 
     additional.add_argument(
