@@ -101,10 +101,9 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
         for key, val in klst.items():
             f.write(f'{key}\t{','.join(list(dict.fromkeys(val)))}\n')
 
-    kmap = {file[0]: (file[1], file[2]) for file in files}
     with open(f'{outdir}/taxonomy.tab', 'w') as f:
-        for key, val in kmap.items():
-            f.write(f'{key}\t{val[0]}\t{metadata.get(val[0])}\t{val[1]}\n')
+        for file in [file[1] for file in files]:
+            f.write(f'{file[0]}\t{file[1]}\t{file[2]}\t{file[3]}\t{metadata.get(file[0])}\n')
 
     with open(f'{outdir}/parameter.tab', 'w') as f:
         f.write('\n'.join((f'k\t{k}', f's\t{s}', f'w\t{w}')) + '\n')

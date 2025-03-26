@@ -15,21 +15,23 @@ def sketch(file, folder, k, s, w):
     file, name, idx = file
     maxhash = int((2 ** 64 - 1) / s)
 
-    kval = dict()
+    ctgs = dict()
     kcnt = Counter()
     with gzip.open(file, 'rt') if '.gz' in file else open(file, 'r') as f:
         for n, (_, seq) in enumerate(SimpleFastaParser(f)):
             klst = [canonicalize(seq[i:i + k]) for i in range(len(seq) - k + 1)]
             kcnt.update(klst)
-            kval[n] = klst
+            ctgs[n] = klst
 
+    wids = 0
     seqs = set()
     kdup = {key for key, val in kcnt.items() if val > 1}
     with open(f'{folder}/{idx}.fa', 'w') as f:
-        for n, klst in kval.items():
+        for n, klst in ctgs.items():
             for i, j in enumerate(range(0, len(klst), w)):
                 if ksub := [x for x in klst[j:j + w] if hash64(x, signed=False)[0] < maxhash]:
+                    wids += 1
                     seqs.update(ksub)
                     sign = ['-' if x in kdup else '+' for x in ksub]
                     f.write('\n'.join(f'>{idx}|{n}|{i}|{sign.count('+')}|{y}\n' + x for x, y in zip(ksub, sign)) + '\n')
-    return idx, name, len(seqs)
+    return idx, (name, len(ctgs), wids, len(seqs))
