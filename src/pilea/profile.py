@@ -24,6 +24,7 @@ class GrowthProfiler:
         '''
         Profile bacterial growth dynamics.
         '''
+        self.data = []
         self.force = force
         self.outdir = outdir
         self.threads = threads
@@ -96,29 +97,7 @@ class GrowthProfiler:
                     os.remove(file)
 
     @staticmethod
-    def _parse(kval, min_cont, accession2info, kmer2accession):
-        sample, kcnt = kval
-        kset = defaultdict(set)
-        for key, val in kcnt.items():
-            for accession in kmer2accession.get(key):
-                kset[accession.split('|', 1)[0]].add(key)
-        kset = {key: val for key, val in kset.items() if len(val) / accession2info.get(key)[-1] > min_cont}
-
-        data = []
-        while kset:
-            ## pop an accession with the highest containment
-            accession = max(kset, key=lambda x: len(kset[x]) / accession2info.get(x)[-1])
-
-            ## record kmers' information
-            vset = kset.get(accession)
-            data.append([sample, *accession2info.get(accession), [(z[1], kcnt.get(x)) for x in sorted(vset) for y in kmer2accession.get(x) if (z := y.split('|', 1))[0] == accession]])
-
-            ## update by set subtraction
-            kset = {key: newval for key, val in kset.items() if (len(newval := val - vset) / accession2info.get(key)[-1]) > min_cont}
-        return data
-
-    @staticmethod
-    def _filter(row, max_disp, min_dept, min_cont):
+    def _filter(row, min_dept, max_disp, min_frac):
         def _trim(x, return_limits=False):
             if x.size == 0:
                 return x
@@ -126,13 +105,12 @@ class GrowthProfiler:
             q1, q3 = np.percentile(x, [25, 75])
             lower, upper = q1 - 1.5 * (q3 - q1), q3 + 1.5 * (q3 - q1)
 
-            x = np.rint(2 ** x[(x >= lower) & (x <= upper)])
+            x = np.rint(2 ** x[(x >= lower) & (x <= upper)]).astype(np.int32)
             return (2 ** lower, 2 ** upper) if return_limits else x
 
         kcnt = defaultdict(list)
         for x in row[-1]:
-            if x[0][-1] == '+':
-                kcnt[x[0].rsplit('|', 1)[0]].append(x[1])
+            kcnt[x[0][:-2]].append(x[1])
 
         lower, upper = _trim(np.asarray(list(chain(*kcnt.values()))), return_limits=True)
         depths, dispersions, observations = [], [], []
@@ -149,48 +127,74 @@ class GrowthProfiler:
             if (
                 (depth := np.median(depths)) > min_dept and
                 (dispersion := np.median(dispersions)) < max_disp and
-                (containment := sum(len(x) for x in observations) / row[3]) > min_cont
+                (fraction := len(observations) / row[3]) > min_frac
             ):
-                return row[:3] + [depth, dispersion, containment, observations]
+                return row[:3] + [depth, dispersion, fraction] + [row[4], observations]
 
-    def parse(self, max_disp=np.inf, min_dept=5, min_cont=0.5):
+    def parse(self, min_dept=5, max_disp=np.inf, min_frac=0.5, min_cont=0.75):
         '''
         Parse and filter outputs of KMC.
         '''
-        ## get taxonomy/accession mapping for observed kmers
         log.info('Loading mapping files ...')
-        kval = defaultdict(dict)
+        info = dict()
+        with open(f'{self.database}/taxonomy.tab') as f:
+            for i, line in enumerate(f.readlines()):
+                ls = line.rstrip().split('\t')
+                info[str(i)] = ls[0], ls[4], int(ls[2]), int(ls[3])
+
+        ## load observed counts
+        obs = defaultdict(dict)
         for sample in self.files.keys():
             file = f'{self.outdir}/{sample}.sketch.txt'
             with open(file) as f:
                 for line in f:
-                    kval[sample][line[:self.k]] = int(line[self.k + 1:-1])
+                    obs[sample][line[:self.k]] = int(line[self.k + 1:-1])
 
-        accession2info = dict()
-        with open(f'{self.database}/taxonomy.tab') as f:
+        ## load sketches' mapping files
+        kuni, kdup = dict(), dict()
+        kset = {x for key, val in obs.items() for x in val.keys()}
+        with open(f'{self.database}/sketch.uni') as f, open(f'{self.database}/sketch.dup') as g:
             for line in f:
-                ls = line.rstrip().split('\t')
-                accession2info[ls[0]] = ls[1], ls[2], int(ls[3])
+                if line[:self.k] in kset:
+                    kuni[line[:self.k]] = line[self.k + 1:-1]
 
-        kmer2accession = dict()
-        aset = {x for key, val in kval.items() for x in val.keys()}
-        with open(f'{self.database}/sketch.uni') as f:
-            for line in f:
-                if line[:self.k] in aset:
-                    kmer2accession[line[:self.k]] = [line[self.k + 1:-1]]
-
-        with open(f'{self.database}/sketch.dup') as f:
-            for line in f:
-                if line[:self.k] in aset:
-                    kmer2accession[line[:self.k]] = line[self.k + 1:-1].split(',')
+            for line in g:
+                if line[:self.k] in kset:
+                    kdup[line[:self.k]] = line[self.k + 1:-1].split(',')
 
         log.info('Parsing and filtering outputs ...')
-        ## allocate kmers to species based on containment ANI
-        fun = partial(self._parse, min_cont=min_cont, accession2info=accession2info, kmer2accession=kmer2accession)
-        self.data = [row for sub in process_map(fun, kval.items(), max_workers=self.threads, chunksize=1, leave=False) for row in sub]
+        queue = tqdm(obs.items(), leave=False)
+        for sample, kcnt in queue:
+            queue.set_description(f'==> Processing <{sample}>')
+
+            ## assign unique sketches directly
+            ku, kd = defaultdict(list), defaultdict(set)
+            for key, val in kcnt.items():
+                if (i := kuni.get(key)):
+                    i = i.split('|', 1)
+                    ku[i[0]].append((i[1], val))
+                else:
+                    for i in kdup.get(key):
+                        kd[i.split('|', 1)[0]].add(key)
+
+            ## assign shared sketches based on containment
+            kc = {key: len(val) / info.get(key)[-1] for key, val in ku.items()}
+            while kd:
+                accession = max(kd, key = lambda key: kc.get(key, 0) + len(kd.get(key)) / info.get(key)[-1])
+                ks = kd.pop(accession)
+                for idx, val in [(kdup.get(x), kcnt.get(x)) for x in sorted(ks)]:
+                    for i in idx:
+                        i = i.split('|', 1)
+                        if i[1][-1] == '+' and i[0] == accession:
+                            ku[i[0]].append((i[1], val))
+
+                kc[accession] = kc.get(accession, 0) + len(ks) / info.get(accession)[-1]
+                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - ks) / info.get(key)[-1] > min_cont}
+
+            self.data.extend([[sample, *info.get(key)[:-1], cont, val] for key, val in ku.items() if (cont := kc.get(key)) > min_cont])
 
         ## prune local/global outliers
-        fun = partial(self._filter, max_disp=max_disp, min_dept=min_dept, min_cont=min_cont)
+        fun = partial(self._filter, max_disp=max_disp, min_dept=min_dept, min_frac=min_frac)
         self.data = [row for row in process_map(fun, self.data, max_workers=self.threads, chunksize=1, leave=False) if row]
 
     @staticmethod
@@ -217,7 +221,7 @@ class GrowthProfiler:
             R = median_abs_deviation(Y) / 5
             return np.median([2 ** (RANSACRegressor(residual_threshold=R, random_state=i).fit(X, Y).estimator_.coef_[0] * (N - 1)) for i in range(100)])
 
-    def fit(self, components=5, max_iter=np.inf, tol=1e-5):
+    def infer(self, components=5, max_iter=np.inf, tol=1e-5):
         log.info('Fitting counts ...')
         fun = partial(self._fit, components=components, max_iter=max_iter, tol=tol)
         for row, ptr in zip(self.data, process_map(fun, [row[-1] for row in self.data], max_workers=self.threads, chunksize=1, leave=False)):
@@ -225,18 +229,18 @@ class GrowthProfiler:
 
     def write(self):
         with open(f'{self.outdir}/output.tsv', 'w') as f:
-            f.write('\t'.join(['sample', 'genome', 'taxonomy', 'depth', 'dispersion', 'containment', 'ptr']) + '\n')
+            f.write('\t'.join(['sample', 'genome', 'taxonomy', 'depth', 'dispersion', 'fraction', 'containment', 'ptr']) + '\n')
             for row in sorted(self.data):
                 if row[-1] is not None:
                     f.write('\t'.join(row[:3] + [f'{x:.4f}' for x in row[3:]]) + '\n')
         log.info('Done.')
 
-def profile(files, outdir, database, force=False, single=False, max_disp=np.inf, min_dept=5, min_cont=0.5, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
+def profile(files, outdir, database, force=False, single=False, min_dept=5, max_disp=np.inf, min_frac=0.5, min_cont=0.75, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
     '''
     Profile bacterial growth dynamics.
     '''
     gp = GrowthProfiler(files=files, outdir=outdir, database=database, force=force, single=single, threads=threads)
     gp.count()
-    gp.parse(max_disp=max_disp, min_dept=min_dept, min_cont=min_cont)
-    gp.fit(components=components, max_iter=max_iter, tol=tol)
+    gp.parse(max_disp=max_disp, min_dept=min_dept, min_frac=min_frac, min_cont=min_cont)
+    gp.infer(components=components, max_iter=max_iter, tol=tol)
     gp.write()

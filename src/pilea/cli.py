@@ -151,7 +151,7 @@ def parser_profile(parser):
     optional.add_argument(
         '--single',
         action='store_true',
-        help='Input files are single-end. If not given then merge forward|reward files with <_(1|2)>, <_(R1|R2)> or <_(fwd|rev)>.')
+        help='Files are single-end. If not given then merge forward|reward files with <_(1|2)>, <_(R1|R2)> or <_(fwd|rev)>.')
 
     optional.add_argument(
         '-t',
@@ -164,14 +164,6 @@ def parser_profile(parser):
     additional = parser_profile.add_argument_group('additional arguments - parsing')
     additional.add_argument(
         '-x',
-        '--max-disp',
-        metavar='FLOAT',
-        type=float,
-        default=np.inf,
-        help='Max. median dispersion of counts.')
-
-    additional.add_argument(
-        '-y',
         '--min-dept',
         metavar='FLOAT',
         type=float,
@@ -179,12 +171,28 @@ def parser_profile(parser):
         help='Min. median depth of reference genomes.')
 
     additional.add_argument(
+        '-y',
+        '--max-disp',
+        metavar='FLOAT',
+        type=float,
+        default=np.inf,
+        help='Max. median dispersion of observed counts.')
+
+    additional.add_argument(
         '-z',
-        '--min-cont',
+        '--min-frac',
         metavar='FLOAT',
         type=float,
         default=0.5,
-        help='Min. containment of reference genomes.')
+        help="Min. fraction of reference genomes' windows.")
+
+    additional.add_argument(
+        '-c',
+        '--min-cont',
+        metavar='FLOAT',
+        type=float,
+        default=0.75,
+        help="Min. containment of reference genomes' sketches.")
 
     additional = parser_profile.add_argument_group('additional arguments - fitting')
     additional.add_argument(
