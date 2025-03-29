@@ -13,10 +13,10 @@ def wget(file, folder):
     ], check=True, capture_output=True, text=True).stderr
 
     for line in stderr.splitlines():
-        if "content-length" in line.lower():
-            file_zize = int(line.split(":", 1)[1].strip())
+        if 'content-length' in line.lower():
+            file_zize = int(line.split(':', 1)[1].strip())
     
-    file_path = f'{folder}/{file.split('/')[-1]}'
+    file_path = f'{folder}/{file.split("/")[-1]}'
     if os.path.isfile(file_path) and file_zize == os.path.getsize(file_path):
         log.info(f'File <{file_path}> exist, skip.')
     else:

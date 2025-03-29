@@ -33,5 +33,5 @@ def sketch(file, folder, k, s, w):
                     wids += 1
                     seqs.update(ksub)
                     sign = ['-' if x in kdup else '+' for x in ksub]
-                    f.write('\n'.join(f'>{idx}|{n}|{i}|{sign.count('+')}|{y}\n' + x for x, y in zip(ksub, sign)) + '\n')
+                    f.write('\n'.join(f'>{idx}|{n}|{i}|{sign.count("+")}|{y}\n' + x for x, y in zip(ksub, sign)) + '\n')
     return idx, (name, len(ctgs), wids, len(seqs))

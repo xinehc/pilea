@@ -99,7 +99,7 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
 
     with open(f'{outdir}/sketch.dup', 'w') as f:
         for key, val in klst.items():
-            f.write(f'{key}\t{','.join(list(dict.fromkeys(val)))}\n')
+            f.write(f'{key}\t{",".join(list(dict.fromkeys(val)))}\n')
 
     with open(f'{outdir}/taxonomy.tab', 'w') as f:
         for file in [file[1] for file in files]:
@@ -132,7 +132,7 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
 
         with open(f'{outdir}/sketch.dup', 'a') as f:
             for key, val in klst.items():
-                f.write(f'{key}\t{','.join(val)}\n')
+                f.write(f'{key}\t{",".join(val)}\n')
 
         kmc.union(in_prefix=f'{outdir}/sketch', ref_prefix=f'{database}/sketch', out_prefix=f'{outdir}/sketch')
         with open(f'{outdir}/taxonomy.tab', 'wb') as f:
