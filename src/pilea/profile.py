@@ -131,7 +131,7 @@ class GrowthProfiler:
             ):
                 return row[:3] + [depth, dispersion, fraction] + [row[4], observations]
 
-    def parse(self, min_dept=5, max_disp=np.inf, min_frac=0.5, min_cont=0.75):
+    def parse(self, min_dept=5, max_disp=50, min_frac=0.5, min_cont=0.5):
         '''
         Parse and filter outputs of KMC.
         '''
@@ -230,12 +230,12 @@ class GrowthProfiler:
     def write(self):
         with open(f'{self.outdir}/output.tsv', 'w') as f:
             f.write('\t'.join(['sample', 'genome', 'taxonomy', 'depth', 'dispersion', 'fraction', 'containment', 'ptr']) + '\n')
-            for row in sorted(self.data):
+            for row in sorted(self.data, key=lambda row: (row[0], row[2], row[1])):
                 if row[-1] is not None:
                     f.write('\t'.join(row[:3] + [f'{x:.4f}' for x in row[3:]]) + '\n')
         log.info('Done.')
 
-def profile(files, outdir, database, force=False, single=False, min_dept=5, max_disp=np.inf, min_frac=0.5, min_cont=0.75, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
+def profile(files, outdir, database, force=False, single=False, min_dept=5, max_disp=50, min_frac=0.5, min_cont=0.5, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
     '''
     Profile bacterial growth dynamics.
     '''

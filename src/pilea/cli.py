@@ -175,7 +175,7 @@ def parser_profile(parser):
         '--max-disp',
         metavar='FLOAT',
         type=float,
-        default=np.inf,
+        default=50,
         help='Max. median dispersion of observed counts.')
 
     additional.add_argument(
@@ -191,7 +191,7 @@ def parser_profile(parser):
         '--min-cont',
         metavar='FLOAT',
         type=float,
-        default=0.75,
+        default=0.5,
         help="Min. containment of reference genomes' sketches.")
 
     additional = parser_profile.add_argument_group('additional arguments - fitting')
