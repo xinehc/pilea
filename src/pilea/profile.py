@@ -174,24 +174,24 @@ class GrowthProfiler:
                     i = i.split('|', 1)
                     ku[i[0]].append((i[1], val))
                 else:
-                    for i in kdup.get(key):
+                    for i in kdup[key]:
                         kd[i.split('|', 1)[0]].add(key)
 
             ## assign shared sketches based on containment
-            kc = {key: len(val) / info.get(key)[-1] for key, val in ku.items()}
+            kc = {key: len(val) / info[key][-1] for key, val in ku.items()}
             while kd:
-                accession = max(kd, key = lambda key: kc.get(key, 0) + len(kd.get(key)) / info.get(key)[-1])
+                accession = max(kd, key = lambda key: kc.get(key, 0) + len(kd[key]) / info[key][-1])
                 ks = kd.pop(accession)
-                for idx, val in [(kdup.get(x), kcnt.get(x)) for x in sorted(ks)]:
+                for idx, val in [(kdup[x], kcnt[x]) for x in sorted(ks)]:
                     for i in idx:
                         i = i.split('|', 1)
-                        if i[1][-1] == '+' and i[0] == accession:
+                        if i[0] == accession and i[1][-1] == '+':
                             ku[i[0]].append((i[1], val))
 
-                kc[accession] = kc.get(accession, 0) + len(ks) / info.get(accession)[-1]
-                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - ks) / info.get(key)[-1] > min_cont}
+                kc[accession] = kc.get(accession, 0) + len(ks) / info[accession][-1]
+                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - ks) / info[key][-1] > min_cont}
 
-            self.data.extend([[sample, *info.get(key)[:-1], cont, val] for key, val in ku.items() if (cont := kc.get(key)) > min_cont])
+            self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := kc[key]) > min_cont])
 
         ## prune local/global outliers
         fun = partial(self._filter, max_disp=max_disp, min_dept=min_dept, min_frac=min_frac)
