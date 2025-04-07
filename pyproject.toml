@@ -16,6 +16,7 @@ dependencies = [
     "mmh3",
     "tqdm",
     "biopython",
+    "statsmodels",
     "scikit-learn",
     "rich_argparse",
     "threadpoolctl"

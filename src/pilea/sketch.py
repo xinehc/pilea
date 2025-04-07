@@ -18,20 +18,24 @@ def sketch(file, folder, k, s, w):
     ctgs = dict()
     kcnt = Counter()
     with gzip.open(file, 'rt') if '.gz' in file else open(file, 'r') as f:
-        for n, (_, seq) in enumerate(SimpleFastaParser(f)):
-            klst = [canonicalize(seq[i:i + k]) for i in range(len(seq) - k + 1)]
-            kcnt.update(klst)
-            ctgs[n] = klst
+        for n, (_, fseq) in enumerate(SimpleFastaParser(f)):
+            fseq = fseq.upper()
+            kpos = [(canonicalize(fseq[i:i + k]), i + k // 2) for i in range(len(fseq) - k + 1)]
+            kcnt.update([kmer for kmer, _ in kpos])
+            ctgs[n] = (fseq, kpos)
 
-    wids = 0
+    wins = 0
     seqs = set()
     kdup = {key for key, val in kcnt.items() if val > 1}
     with open(f'{folder}/{idx}.fa', 'w') as f:
-        for n, klst in ctgs.items():
-            for i, j in enumerate(range(0, len(klst), w)):
-                if ksub := [x for x in klst[j:j + w] if hash64(x, signed=False)[0] < maxhash]:
-                    wids += 1
-                    seqs.update(ksub)
-                    sign = ['-' if x in kdup else '+' for x in ksub]
-                    f.write('\n'.join(f'>{idx}|{n}|{i}|{sign.count("+")}|{y}\n' + x for x, y in zip(ksub, sign)) + '\n')
-    return idx, (name, len(ctgs), wids, len(seqs))
+        for n, (fseq, kpos) in ctgs.items():
+            for i, j in enumerate(range(0, len(kpos), w)):
+                if ksub := [(kmer, pos, kmer in kdup) for kmer, pos in kpos[j:j + w] if hash64(kmer, signed=False)[0] < maxhash]:
+                    wins += 1
+                    sins = sum(not dup for _, _, dup in ksub)
+                    for kmer, pos, dup in ksub:
+                        seqs.add(kmer)
+                        gseq = fseq[max(0, pos - 500):pos + 500]
+                        gcnt = int((gseq.count('G') + gseq.count('C')) / len(gseq) * 1000)
+                        f.write(f'>{idx}|{n}|{i}|{sins}|{gcnt}|{"-" if dup else "+"}\n{kmer}\n')
+    return idx, (name, len(ctgs), wins, len(seqs))

@@ -13,6 +13,7 @@ from functools import partial
 from itertools import chain
 from sklearn.linear_model import RANSACRegressor
 from scipy.stats import median_abs_deviation, iqr
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from .log import log
 from .kmc import KMC
@@ -108,10 +109,26 @@ class GrowthProfiler:
             x = np.rint(2 ** x[(x >= lower) & (x <= upper)]).astype(np.int32)
             return (2 ** lower, 2 ** upper) if return_limits else x
 
-        kcnt = defaultdict(list)
-        for x in row[-1]:
-            kcnt[x[0][:-2]].append(x[1])
+        def _debias(x, y, frac=0.25):
+            t = lowess(exog=x, endog=y, frac=frac)[:, 1]
+            y = np.rint(2 ** (np.asarray(y) - t + np.mean(t))).astype(np.int32)
+            return y
 
+        A = []
+        for val in row[-1]:
+            s = val[0].rsplit('|', 2)
+            A.append((int(s[1]), np.log2(val[1]), s[0]))
+
+        ## sort sketches by their GC content
+        A = sorted(A, key=lambda x: x[0])
+        Y = _debias(x=[a[0] for a in A], y=[a[1] for a in A])
+
+        kcnt = defaultdict(list)
+        for a, y in zip(A, Y):
+            if y != 0:
+                kcnt[a[-1]].append(y)
+
+        ## trim global/local outliers
         lower, upper = _trim(np.asarray(list(chain(*kcnt.values()))), return_limits=True)
         depths, dispersions, observations = [], [], []
         for key, val in kcnt.items():
