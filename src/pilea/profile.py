@@ -134,7 +134,7 @@ class GrowthProfiler:
         for key, val in kcnt.items():
             val = np.asarray(val)
             val = _trim(val[(val >= lower) & (val <= upper)])
-            if len(val) > max(1, int(key.rsplit('|', 1)[-1]) / 2):
+            if len(val) > max(1, int(key.rsplit('|', 1)[-1]) / 5):
                 mean, var = np.mean(val), np.var(val, ddof=1)
                 depths.append(mean)
                 dispersions.append(var / mean)
@@ -195,18 +195,24 @@ class GrowthProfiler:
                         kd[i.split('|', 1)[0]].add(key)
 
             ## assign shared sketches based on containment
+            ka = dict()
             kc = {key: len(val) / info[key][-1] for key, val in ku.items()}
             while kd:
                 accession = max(kd, key = lambda key: kc.get(key, 0) + len(kd[key]) / info[key][-1])
                 ks = kd.pop(accession)
-                for idx, val in [(kdup[x], kcnt[x]) for x in sorted(ks)]:
-                    for i in idx:
-                        i = i.split('|', 1)
-                        if i[0] == accession and i[1][-1] == '+':
-                            ku[i[0]].append((i[1], val))
+                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - ks) / info[key][-1] > min_cont / 2}
 
                 kc[accession] = kc.get(accession, 0) + len(ks) / info[accession][-1]
-                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - ks) / info[key][-1] > min_cont}
+                if kc[accession] > min_cont:
+                    ka[accession] = ks
+
+            for accession, ks in ka.items():
+                for idx, val in [(kdup[x], kcnt[x]) for x in sorted(ks)]:
+                    if len({s for i in idx if kc.get(s := i.split('|', 1)[0], 0) > min_cont / 2}) == 1:
+                        for i in idx:
+                            s = i.split('|', 1)
+                            if s[0] == accession and s[1][-1] == '+':
+                                ku[s[0]].append((s[1], val))
 
             self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := kc[key]) > min_cont])
 
