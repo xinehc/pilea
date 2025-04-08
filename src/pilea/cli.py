@@ -9,11 +9,11 @@ from . import __version__
 from . import index, fetch, profile, rebuild
 
 ## customize formatter
-ArgumentDefaultsRichHelpFormatter.styles["argparse.prog"] = "default"
-ArgumentDefaultsRichHelpFormatter.styles["argparse.default"] = "grey50"
-ArgumentDefaultsRichHelpFormatter.styles["argparse.metavar"] = "grey50"
-ArgumentDefaultsRichHelpFormatter.styles["argparse.groups"] = "#DF8080"
-ArgumentDefaultsRichHelpFormatter.styles["argparse.args"] = "#85C2DE"
+ArgumentDefaultsRichHelpFormatter.styles['argparse.prog'] = 'default'
+ArgumentDefaultsRichHelpFormatter.styles['argparse.default'] = 'grey50'
+ArgumentDefaultsRichHelpFormatter.styles['argparse.metavar'] = 'grey50'
+ArgumentDefaultsRichHelpFormatter.styles['argparse.groups'] = '#DF8080'
+ArgumentDefaultsRichHelpFormatter.styles['argparse.args'] = '#85C2DE'
 
 
 def parser_index(parser):
@@ -168,31 +168,31 @@ def parser_profile(parser):
         metavar='FLOAT',
         type=float,
         default=5,
-        help='Min. median depth of reference genomes.')
+        help='Min. median (window) depth of sketches.')
 
     additional.add_argument(
         '-y',
         '--max-disp',
         metavar='FLOAT',
         type=float,
-        default=50,
-        help='Max. median dispersion of observed counts.')
+        default=np.inf,
+        help="Max. median (window) dispersion of sketches' counts.")
 
     additional.add_argument(
         '-z',
         '--min-frac',
         metavar='FLOAT',
         type=float,
-        default=0.5,
-        help="Min. fraction of reference genomes' windows.")
+        default=0.75,
+        help="Min. fraction of reference genomes' windows covered by sketches.")
 
     additional.add_argument(
         '-c',
         '--min-cont',
         metavar='FLOAT',
         type=float,
-        default=0.5,
-        help="Min. containment of reference genomes' sketches.")
+        default=0.75,
+        help="Min. containment of reference genomes' sketches before window-based filtering.")
 
     additional = parser_profile.add_argument_group('additional arguments - fitting')
     additional.add_argument(
@@ -281,8 +281,8 @@ def parser_rebuild(parser):
 
 def cli():
     parser = argparse.ArgumentParser(
-        prog="pilea",
-        description="Pilea: profiling bacterial growth dynamics from metagenomes with sketching",
+        prog='pilea',
+        description='Pilea: profiling bacterial growth dynamics from metagenomes with sketching',
         formatter_class=ArgumentDefaultsRichHelpFormatter
     )
     parser.add_argument('-v', '--version', action='version', version=__version__)
