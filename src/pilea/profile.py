@@ -134,7 +134,7 @@ class GrowthProfiler:
         for key, val in kcnt.items():
             val = np.asarray(val)
             val = _trim(val[(val >= lower) & (val <= upper)])
-            if len(val) > max(1, int(key.rsplit('|', 1)[-1]) / 5):
+            if len(val) > max(1, int(key.rsplit(':', 1)[-1]) / 5):
                 mean, var = np.mean(val), np.var(val, ddof=1)
                 depths.append(mean)
                 dispersions.append(var / mean)

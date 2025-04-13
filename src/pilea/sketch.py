@@ -28,14 +28,14 @@ def sketch(file, folder, k, s, w):
     seqs = set()
     kdup = {key for key, val in kcnt.items() if val > 1}
     with open(f'{folder}/{idx}.fa', 'w') as f:
-        for n, (fseq, kpos) in ctgs.items():
-            for i, j in enumerate(range(0, len(kpos), w)):
-                if ksub := [(kmer, pos, kmer in kdup) for kmer, pos in kpos[j:j + w] if hash64(kmer, signed=False)[0] < maxhash]:
-                    wins += 1
+        for _, (fseq, kpos) in ctgs.items():
+            for i in range(0, len(kpos), w):
+                if ksub := [(kmer, pos, kmer in kdup) for kmer, pos in kpos[i:i + w] if hash64(kmer, signed=False)[0] < maxhash]:
                     sins = sum(not dup for _, _, dup in ksub)
                     for kmer, pos, dup in ksub:
                         seqs.add(kmer)
                         gseq = fseq[max(0, pos - 500):pos + 500]
                         gcnt = int((gseq.count('G') + gseq.count('C')) / len(gseq) * 1000)
-                        f.write(f'>{idx}|{n}|{i}|{sins}|{gcnt}|{"-" if dup else "+"}\n{kmer}\n')
+                        f.write(f'>{idx}|{wins}:{sins}|{gcnt}|{"-" if dup else "+"}\n{kmer}\n')
+                    wins += 1
     return idx, (name, len(ctgs), wins, len(seqs))
