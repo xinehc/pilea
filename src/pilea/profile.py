@@ -98,7 +98,7 @@ class GrowthProfiler:
                     os.remove(file)
 
     @staticmethod
-    def _filter(row, min_dept, max_disp, min_frac):
+    def _filter(row, min_dept, max_disp, min_frac, min_cont):
         def _trim(x, return_limits=False):
             if x.size == 0:
                 return x
@@ -134,7 +134,7 @@ class GrowthProfiler:
         for key, val in kcnt.items():
             val = np.asarray(val)
             val = _trim(val[(val >= lower) & (val <= upper)])
-            if len(val) > max(1, int(key.rsplit(':', 1)[-1]) / 5):
+            if len(val) > max(1, int(key.rsplit(':', 1)[-1]) * min_cont[0]):
                 mean, var = np.mean(val), np.var(val, ddof=1)
                 depths.append(mean)
                 dispersions.append(var / mean)
@@ -148,7 +148,7 @@ class GrowthProfiler:
             ):
                 return row[:3] + [depth, dispersion, fraction] + [row[4], observations]
 
-    def parse(self, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=0.75):
+    def parse(self, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=(0.25, 0.50)):
         '''
         Parse and filter outputs of KMC.
         '''
@@ -186,38 +186,41 @@ class GrowthProfiler:
 
             ## assign unique sketches directly
             ku, kd = defaultdict(list), defaultdict(set)
+            kv = defaultdict(lambda: 0)
             for key, val in kcnt.items():
                 if (i := kuni.get(key)):
-                    i = i.split('|', 1)
-                    ku[i[0]].append((i[1], val))
+                    s = i.split('|', 1)
+                    ku[s[0]].append((s[1], val))
+                    kv[s[0]] += 1
                 else:
-                    for i in kdup[key]:
-                        kd[i.split('|', 1)[0]].add(key)
+                    for s in {i.split('|', 1)[0] for i in kdup[key]}:
+                        kd[s].add(key)
+                        kv[s] += 1
 
             ## assign shared sketches based on containment
             ka = dict()
             kc = {key: len(val) / info[key][-1] for key, val in ku.items()}
+            kv = {key for key, val in kv.items() if val / info[key][-1] > min_cont[1]}
             while kd:
                 accession = max(kd, key = lambda key: kc.get(key, 0) + len(kd[key]) / info[key][-1])
-                ks = kd.pop(accession)
-                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - ks) / info[key][-1] > min_cont / 2}
+                sketches = kd.pop(accession)
+                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - sketches) / info[key][-1] > min_cont[0]}
 
-                kc[accession] = kc.get(accession, 0) + len(ks) / info[accession][-1]
-                if kc[accession] > min_cont:
-                    ka[accession] = ks
+                kc[accession] = kc.get(accession, 0) + len(sketches) / info[accession][-1]
+                ka[accession] = sketches
 
-            for accession, ks in ka.items():
-                for idx, val in [(kdup[x], kcnt[x]) for x in sorted(ks)]:
-                    if len({s for i in idx if kc.get(s := i.split('|', 1)[0], 0) > min_cont / 2}) == 1:
+            ## existence checking with one-to-one (kc) and one-to-all (kv) shared sketch assignment
+            for accession, sketches in ka.items():
+                for idx, val in [(kdup[sketch], kcnt[sketch]) for sketch in sorted(sketches)]:
+                    if len({s for i in idx if (s := i.split('|', 1)[0]) in kv and kc.get(s, 0) > min_cont[0]}) == 1:
                         for i in idx:
-                            s = i.split('|', 1)
-                            if s[0] == accession and s[1][-1] == '+':
+                            if i[-1] == '+' and (s := i.split('|', 1))[0] == accession:
                                 ku[s[0]].append((s[1], val))
 
-            self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := kc[key]) > min_cont])
+            self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := len(val) / info[key][-1]) > min_cont[0]])
 
         ## prune local/global outliers
-        fun = partial(self._filter, max_disp=max_disp, min_dept=min_dept, min_frac=min_frac)
+        fun = partial(self._filter, max_disp=max_disp, min_dept=min_dept, min_frac=min_frac, min_cont=min_cont)
         self.data = [row for row in process_map(fun, self.data, max_workers=self.threads, chunksize=1, leave=False) if row]
 
     @staticmethod
@@ -258,7 +261,7 @@ class GrowthProfiler:
                     f.write('\t'.join(row[:3] + [f'{x:.4f}' for x in row[3:]]) + '\n')
         log.info('Done.')
 
-def profile(files, outdir, database, force=False, single=False, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=0.75, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
+def profile(files, outdir, database, force=False, single=False, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=(0.25, 0.50), components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
     '''
     Profile bacterial growth dynamics.
     '''

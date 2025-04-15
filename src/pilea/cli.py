@@ -7,6 +7,7 @@ from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from . import __version__
 from . import index, fetch, profile, rebuild
+from .log import log
 
 ## customize formatter
 ArgumentDefaultsRichHelpFormatter.styles['argparse.prog'] = 'default'
@@ -190,9 +191,9 @@ def parser_profile(parser):
         '-c',
         '--min-cont',
         metavar='FLOAT',
-        type=float,
-        default=0.75,
-        help="Min. containment of reference genomes' sketches before window-based filtering.")
+        type=str,
+        default='0.25,0.50',
+        help="Min. containment of reference genomes' sketches under one-to-one/-all shared sketch assignments for existence checking.")
 
     additional = parser_profile.add_argument_group('additional arguments - fitting')
     additional.add_argument(
@@ -298,7 +299,18 @@ def cli():
         sys.exit(1)
 
     args = parser.parse_args()
-    args.func(**{key: val for key, val in vars(args).items() if key != 'func'})
+    kwargs = {key: val for key, val in vars(args).items() if key != 'func'}
+    if 'min_cont' in kwargs:
+        try:
+            min_cont = tuple(float(x) for x in kwargs['min_cont'].split(','))
+            if len(min_cont) != 2:
+                raise
+            kwargs['min_cont'] = min_cont
+        except:
+            log.critical('Argument <--min-cont> requires two floats separated by a comma.')
+            sys.exit(2)
+
+    args.func(**kwargs)
 
 if __name__ == '__main__':
     cli()
