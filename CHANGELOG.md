@@ -1,4 +1,9 @@
 # Changelog
+## [0.2.1] - 2025-04-15
+### Changed
+- Refine criteria for existence checking of genomes.
+- Simplify database format.
+
 ## [0.2.0] - 2025-04-08
 ### Added
 - Add idr filter and loess-based qc bias correction.
