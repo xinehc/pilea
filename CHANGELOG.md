@@ -1,4 +1,8 @@
 # Changelog
+## [0.2.2] - 2025-04-18
+### Changed
+- Remvoe `.txt` for sketches.
+
 ## [0.2.1] - 2025-04-15
 ### Changed
 - Refine criteria for existence checking of genomes.
