@@ -87,8 +87,8 @@ class GrowthProfiler:
         with logging_redirect_tqdm():
             for sample, file in queue:
                 queue.set_description(f'==> Processing <{sample}>')
-                if os.path.isfile(f'{self.outdir}/{sample}.sketch.txt') and not self.force:
-                    log.info(f'File <{self.outdir}/{sample}.sketch.txt> exists, skip. Use <--force> for overwritting.')
+                if os.path.isfile(f'{self.outdir}/{sample}.sketch') and not self.force:
+                    log.info(f'File <{self.outdir}/{sample}.sketch> exists, skip. Use <--force> for overwritting.')
                 else:
                     kmc = KMC(file=file, prefix=f'{self.outdir}/{sample}', threads=self.threads)
                     kmc.count(k=self.k, f=self.f, ci=1)
@@ -162,7 +162,7 @@ class GrowthProfiler:
         ## load observed counts
         obs = defaultdict(dict)
         for sample in self.files.keys():
-            file = f'{self.outdir}/{sample}.sketch.txt'
+            file = f'{self.outdir}/{sample}.sketch'
             with open(file) as f:
                 for line in f:
                     obs[sample][line[:self.k]] = int(line[self.k + 1:-1])

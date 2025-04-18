@@ -38,7 +38,7 @@ class KMC:
         """
         """
         subprocess.run([
-            'kmc_tools', f'-t{self.threads}', 'transform', prefix, 'dump', f'{prefix}.txt'
+            'kmc_tools', f'-t{self.threads}', 'transform', prefix, 'dump', f'{prefix}'
         ], check=True, stderr=subprocess.DEVNULL)
 
     def union(self, in_prefix, ref_prefix, out_prefix):

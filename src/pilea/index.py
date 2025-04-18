@@ -78,12 +78,12 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
     kmc.count(k=k, f='fm', ci=1)
     kmc.compact(in_prefix=f'{outdir}/tmp', out_prefix=f'{outdir}/sketch')
 
-    kmc = KMC(file=f'{outdir}/tmp.fa', prefix=f'{outdir}/tmp', threads=threads)
+    kmc = KMC(file=f'{outdir}/tmp.fa', prefix=f'{outdir}/tmp.sketch', threads=threads)
     kmc.count(k=k, f='fm', ci=2)
-    kmc.dump(f'{outdir}/tmp')
+    kmc.dump(f'{outdir}/tmp.sketch')
 
     log.info('Writing sequences ...')
-    with open(f'{outdir}/tmp.txt') as f:
+    with open(f'{outdir}/tmp.sketch') as f:
         kdup = {line[:k] for line in f}
 
     klst = defaultdict(list)
@@ -114,9 +114,9 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
         for file in ['sketch.uni', 'sketch.dup', 'taxonomy.tab']:
             os.rename(f'{outdir}/{file}', f'{outdir}/tmp.{file}')
 
-        kmc.intersect(in_prefix=f'{outdir}/sketch', ref_prefix=f'{database}/sketch', out_prefix=f'{outdir}/tmp')
-        kmc.dump(prefix=f'{outdir}/tmp')
-        with open(f'{outdir}/tmp.txt') as f:
+        kmc.intersect(in_prefix=f'{outdir}/sketch', ref_prefix=f'{database}/sketch', out_prefix=f'{outdir}/tmp.sketch')
+        kmc.dump(prefix=f'{outdir}/tmp.sketch')
+        with open(f'{outdir}/tmp.sketch') as f:
             kdup = {line[:k] for line in f}
 
         klst = defaultdict(list)
