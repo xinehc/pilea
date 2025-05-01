@@ -18,7 +18,7 @@ dependencies = [
     "biopython",
     "statsmodels",
     "scikit-learn",
-    "rich_argparse",
+    "rich-argparse",
     "threadpoolctl"
 ]
 
