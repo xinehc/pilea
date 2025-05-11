@@ -52,7 +52,7 @@ class GrowthProfiler:
                     sys.exit(2)
 
         ## determine file format
-        samples = [re.sub('.gz$', '', os.path.basename(file)) for file in sorted(files)]
+        samples = [re.sub('.gz$', '', os.path.basename(file)) for file in files]
         extensions = {sample.split('.')[-1] for sample in samples}
         if len(extensions) != 1 or not {'fasta', 'fa', 'fastq', 'fq'} & extensions:
             log.critical('Input files need to end with <fa|fq|fasta|fastq>.')
