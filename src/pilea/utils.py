@@ -8,6 +8,7 @@ from .log import log
 
 
 def wget(file, folder):
+    os.makedirs(folder, exist_ok=True)
     stderr = subprocess.run([
         'wget', '-S', '--spider', file,
     ], check=True, capture_output=True, text=True).stderr
