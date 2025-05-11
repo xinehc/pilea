@@ -7,7 +7,7 @@ from .log import log
 
 
 def fetch(outdir):
-    record = 14992958
+    record = 15250125
     stdout = subprocess.run([
         'wget', '-qO-', f'https://doi.org/10.5281/zenodo.{record}',
     ], check=True, capture_output=True, text=True).stdout
