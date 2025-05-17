@@ -65,7 +65,7 @@ class GrowthProfiler:
             samples = [re.sub(rf'.{extension}$', '', sample) for sample in samples]
 
         self.files = defaultdict(list)
-        for sample, file in zip(samples, files):
+        for sample, file in sorted(zip(samples, files)):
             self.files[sample].append(file)
 
         if len({len(file) for file in self.files.values()}) != 1:

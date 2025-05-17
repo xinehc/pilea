@@ -21,7 +21,7 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
     '''
     pattern = '\\.(fa|fna|fasta)(\\.gz)?$'
 
-    files = sorted([file for file in files if re.search(pattern, file) and '*' not in file])
+    files = sorted([file for file in files if re.search(pattern, file) and '*' not in file], key=os.path.basename)
     names = [re.sub(pattern, '', os.path.basename(file)) for file in files]
     if not files:
         log.critical(f'No files with extension <*.(fa|fna|fasta).(gz)?> are given.')
