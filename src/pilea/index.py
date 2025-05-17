@@ -51,9 +51,6 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
     tmpdir = f'{outdir}/tmp'
     if os.path.isdir(outdir):
         shutil.rmtree(tmpdir, ignore_errors=True)
-        for file in ['parameter.tab', 'taxonomy.tab', 'sketch.uni', 'sketch.dup', 'sketch.kmc_pre', 'sketch.kmc_suf']:
-            if os.path.isfile(f'{outdir}/{file}'):
-                os.remove(f'{outdir}/{file}')
     os.makedirs(tmpdir)
 
     log.info('Sketching ...')
@@ -137,7 +134,10 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
             for key, val in klst.items():
                 f.write(f'{key}\t{",".join(val)}\n')
 
-        kmc.union(in_prefix=f'{outdir}/sketch', ref_prefix=f'{database}/sketch', out_prefix=f'{outdir}/sketch')
+        kmc.union(in_prefix=f'{outdir}/sketch', ref_prefix=f'{database}/sketch', out_prefix=f'{outdir}/sketch.union')
+        for suffix in ['kmc_pre', 'kmc_suf']:
+            shutil.move(f'{outdir}/sketch.union.{suffix}', f'{outdir}/sketch.{suffix}')
+
         with open(f'{outdir}/taxonomy.tab', 'wb') as f:
             for file in [f'{database}/taxonomy.tab', f'{outdir}/tmp.taxonomy.tab']:
                 with open(file, 'rb') as g:
