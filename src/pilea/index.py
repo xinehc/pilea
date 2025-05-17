@@ -51,6 +51,9 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
     tmpdir = f'{outdir}/tmp'
     if os.path.isdir(outdir):
         shutil.rmtree(tmpdir, ignore_errors=True)
+        for file in ['parameter.tab', 'taxonomy.tab', 'sketch.uni', 'sketch.dup', 'sketch.kmc_pre', 'sketch.kmc_suf']:
+            if os.path.isfile(f'{outdir}/{file}'):
+                os.remove(f'{outdir}/{file}')
     os.makedirs(tmpdir)
 
     log.info('Sketching ...')
