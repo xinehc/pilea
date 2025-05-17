@@ -191,9 +191,9 @@ def parser_profile(parser):
         '-c',
         '--min-cont',
         metavar='FLOAT',
-        type=str,
-        default='0.25,0.50',
-        help="Min. containment of reference genomes' sketches under one-to-one/-all shared sketch assignments for existence checking.")
+        type=float,
+        default=0.25,
+        help="Min. containment of reference genomes' sketches after reassignment of shared k-mers.")
 
     additional = parser_profile.add_argument_group('additional arguments - fitting')
     additional.add_argument(
@@ -283,7 +283,7 @@ def parser_rebuild(parser):
 def cli():
     parser = argparse.ArgumentParser(
         prog='pilea',
-        description='Pilea: profiling bacterial growth dynamics from metagenomes with sketching',
+        description=f'Pilea v{__version__}: profiling bacterial growth dynamics from metagenomes with sketching',
         formatter_class=ArgumentDefaultsRichHelpFormatter
     )
     parser.add_argument('-v', '--version', action='version', version=__version__)
@@ -299,18 +299,7 @@ def cli():
         sys.exit(1)
 
     args = parser.parse_args()
-    kwargs = {key: val for key, val in vars(args).items() if key != 'func'}
-    if 'min_cont' in kwargs:
-        try:
-            min_cont = tuple(float(x) for x in kwargs['min_cont'].split(','))
-            if len(min_cont) != 2:
-                raise
-            kwargs['min_cont'] = min_cont
-        except:
-            log.critical('Argument <--min-cont> requires two floats separated by a comma.')
-            sys.exit(2)
-
-    args.func(**kwargs)
+    args.func(**{key: val for key, val in vars(args).items() if key != 'func'})
 
 if __name__ == '__main__':
     cli()

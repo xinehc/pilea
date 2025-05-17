@@ -134,7 +134,7 @@ class GrowthProfiler:
         for key, val in kcnt.items():
             val = np.asarray(val)
             val = _trim(val[(val >= lower) & (val <= upper)])
-            if len(val) > max(1, int(key.rsplit(':', 1)[-1]) * min_cont[0]):
+            if len(val) > max(1, int(key.rsplit(':', 1)[-1]) * min_cont):
                 mean, var = np.mean(val), np.var(val, ddof=1)
                 depths.append(mean)
                 dispersions.append(var / mean)
@@ -148,7 +148,7 @@ class GrowthProfiler:
             ):
                 return row[:3] + [depth, dispersion, fraction] + [row[4], observations]
 
-    def parse(self, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=(0.25, 0.50)):
+    def parse(self, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=0.25):
         '''
         Parse and filter outputs of KMC.
         '''
@@ -186,38 +186,33 @@ class GrowthProfiler:
 
             ## assign unique sketches directly
             ku, kd = defaultdict(list), defaultdict(set)
-            kv = defaultdict(lambda: 0)
             for key, val in kcnt.items():
                 if (i := kuni.get(key)):
                     s = i.split('|', 1)
                     ku[s[0]].append((s[1], val))
-                    kv[s[0]] += 1
                 else:
                     for s in {i.split('|', 1)[0] for i in kdup[key]}:
                         kd[s].add(key)
-                        kv[s] += 1
 
             ## assign shared sketches based on containment
             ka = dict()
             kc = {key: len(val) / info[key][-1] for key, val in ku.items()}
-            kv = {key for key, val in kv.items() if val / info[key][-1] > min_cont[1]}
             while kd:
                 accession = max(kd, key = lambda key: kc.get(key, 0) + len(kd[key]) / info[key][-1])
                 sketches = kd.pop(accession)
-                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - sketches) / info[key][-1] > min_cont[0]}
+                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - sketches) / info[key][-1] > min_cont}
 
                 kc[accession] = kc.get(accession, 0) + len(sketches) / info[accession][-1]
                 ka[accession] = sketches
 
-            ## existence checking with one-to-one (kc) and one-to-all (kv) shared sketch assignment
             for accession, sketches in ka.items():
                 for idx, val in [(kdup[sketch], kcnt[sketch]) for sketch in sorted(sketches)]:
-                    if len({s for i in idx if (s := i.split('|', 1)[0]) in kv and kc.get(s, 0) > min_cont[0]}) == 1:
+                    if len({s for i in idx if kc.get(s := i.split('|', 1)[0], 0) > min_cont}) == 1:
                         for i in idx:
                             if i[-1] == '+' and (s := i.split('|', 1))[0] == accession:
                                 ku[s[0]].append((s[1], val))
 
-            self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := len(val) / info[key][-1]) > min_cont[0]])
+            self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := len(val) / info[key][-1]) > min_cont])
 
         ## prune local/global outliers
         fun = partial(self._filter, max_disp=max_disp, min_dept=min_dept, min_frac=min_frac, min_cont=min_cont)
@@ -261,7 +256,7 @@ class GrowthProfiler:
                     f.write('\t'.join(row[:3] + [f'{x:.4f}' for x in row[3:]]) + '\n')
         log.info('Done.')
 
-def profile(files, outdir, database, force=False, single=False, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=(0.25, 0.50), components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
+def profile(files, outdir, database, force=False, single=False, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=0.25, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
     '''
     Profile bacterial growth dynamics.
     '''
