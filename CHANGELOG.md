@@ -1,4 +1,13 @@
 # Changelog
+## [1.0.0] - 2025-05-20
+### Added
+- Add alphabet checker for indexing.
+
+### Changed
+- Simplify parameter `--min-cont`.
+- Reduce time and memory requirement for indexing.
+
+
 ## [0.2.3] - 2025-05-11
 ### Fixed
 - Fix non-existence directory for `wget`.

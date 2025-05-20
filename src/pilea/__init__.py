@@ -11,4 +11,4 @@ if soft_limit < 1024:
 	resource.setrlimit(resource.RLIMIT_NOFILE, (1024, hard_limit))
 
 ## setup version
-__version__ = '0.2.3'
+__version__ = '1.0.0'
