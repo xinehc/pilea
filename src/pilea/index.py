@@ -53,9 +53,11 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
         shutil.rmtree(tmpdir, ignore_errors=True)
     os.makedirs(tmpdir)
 
-    log.info('Sketching ...')
     if taxonomy is None:
         metadata = {name: 'n/a' for name in names}
+    elif not os.path.isfile(taxonomy):
+        log.critical(f'Taxonomy mapping file <{taxonomy}> does not exist.')
+        sys.exit(2)
     else:
         with open(taxonomy) as f:
             metadata = dict(line.rstrip().split('\t')[:2] for line in f)
@@ -65,6 +67,7 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
             names = [name[:15] for name in names]
             metadata = {key[3:]: val for key, val in metadata.items()}
 
+    log.info('Sketching ...')
     files = [(*file, n + idx) for idx, file in enumerate([(file, name) for file, name in zip(files, names) if name in metadata])]
     files = process_map(partial(sketch, folder=tmpdir, k=k, s=s, w=w), files, max_workers=threads, chunksize=1, leave=False)
 
