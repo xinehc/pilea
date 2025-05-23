@@ -224,23 +224,28 @@ class GrowthProfiler:
             rng = np.random.RandomState(seed)
             return np.log2(sorted(rng.choice(y, p=p) for y, p in u))
 
-        u, v = [], []
+        def _ransac(x, y, r, seed):
+            fit = RANSACRegressor(residual_threshold=r, random_state=seed).fit(x, y)
+            return 2 ** (fit.estimator_.coef_[0] * (len(y) - 1))
+
+        u, v, w = [], [], []
         for x in observation:
             fits = [ZTP(x=x).fit(components=n, max_iter=max_iter, tol=tol) for n in range(1, components + 1)]
             lmds, weights, _ = sorted(fits, key=lambda x: x[-1])[0]
             u.append((lmds, weights))
 
-        N = len(u)
-        X = np.asarray(range(N)).reshape(-1, 1)
+        X = np.asarray(range(len(u))).reshape(-1, 1)
         for i in range(100):
             Y = _sample(u, seed=i)
             R = median_abs_deviation(Y) / 5
-            v.append(2 ** (RANSACRegressor(residual_threshold=R, random_state=i).fit(X, Y).estimator_.coef_[0] * (N - 1)))
+            v.append(_ransac(X, Y, R, seed=i))
 
         if iqr(v, rng=(10, 90)) < 1:
             Y = np.log2(sorted(y[np.argmax(p)] for y, p in u))
             R = median_abs_deviation(Y) / 5
-            return np.median([2 ** (RANSACRegressor(residual_threshold=R, random_state=i).fit(X, Y).estimator_.coef_[0] * (N - 1)) for i in range(100)])
+            for i in range(100):
+                w.append(_ransac(X, Y, R, seed=i))
+            return np.median(w)
 
     def infer(self, components=5, max_iter=np.inf, tol=1e-5):
         log.info('Fitting counts ...')
