@@ -1,4 +1,9 @@
 # Changelog
+## [1.1.0] - 2025-05-25
+### Added
+- Add database version control.
+
+
 ## [1.0.0] - 2025-05-20
 ### Added
 - Add alphabet checker for indexing.
