@@ -38,4 +38,4 @@ def sketch(file, folder, k, s, w):
                 wins += 1
             for kmer, gc in kpos:
                 f.write(f'>{idx}|{widx}:{sins}|{gc}|{"-" if kmer in kdup else "+"}\n{kmer}\n')
-    return idx, (name, len(set(i.split('|')[0] for i in ctgs.keys())), wins, len(kcnt) - len(kdup))
+    return idx, (name, len(set(i.split('|')[0] for i in ctgs.keys())), wins, len(kcnt))
