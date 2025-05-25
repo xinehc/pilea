@@ -14,10 +14,12 @@ from itertools import chain
 from sklearn.linear_model import RANSACRegressor
 from scipy.stats import median_abs_deviation, iqr
 from statsmodels.nonparametric.smoothers_lowess import lowess
+from pkg_resources import packaging
 
 from .log import log
 from .kmc import KMC
 from .ztp import ZTP
+from . import __version__
 
 
 class GrowthProfiler:
@@ -77,6 +79,12 @@ class GrowthProfiler:
             for line in f:
                 if line[0] == 'k':
                     self.k = int(line.split()[-1])
+                if line[0] == 'v':
+                    self.v = packaging.version.parse(line.split()[-1])
+
+        if (v := packaging.version.parse(__version__)) < self.v:
+            log.critical(f'This database requires <v{self.v}> or above.')
+            sys.exit(2)
 
     def count(self):
         '''

@@ -13,6 +13,7 @@ from .utils import ctar
 from .sketch import sketch
 from .kmc import KMC
 from .log import log
+from . import __version__
 
 
 def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=250, w=25000, threads=os.cpu_count()):
@@ -109,7 +110,7 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
             f.write(f'{file[0]}\t{file[1]}\t{file[2]}\t{file[3]}\t{metadata[file[0]]}\n')
 
     with open(f'{outdir}/parameter.tab', 'w') as f:
-        f.write('\n'.join((f'k\t{k}', f's\t{s}', f'w\t{w}')) + '\n')
+        f.write('\n'.join((f'k\t{k}', f's\t{s}', f'w\t{w}', f'v\t{__version__}')) + '\n')
 
     ## merge databases if necessary
     if database is not None:
