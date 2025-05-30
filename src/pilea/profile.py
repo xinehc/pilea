@@ -83,7 +83,7 @@ class GrowthProfiler:
                     self.v = packaging.version.parse(line.split()[-1])
 
         if (v := packaging.version.parse(__version__)) < self.v:
-            log.critical(f'This database requires <v{self.v}> or above.')
+            log.critical(f'Database <{database}> requires <v{self.v}> or above.')
             sys.exit(2)
 
     def count(self):

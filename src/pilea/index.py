@@ -8,6 +8,7 @@ from collections import defaultdict
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 from functools import partial
+from pkg_resources import packaging
 
 from .utils import ctar
 from .sketch import sketch
@@ -40,9 +41,15 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
 
         with open(f'{database}/parameter.tab') as f:
             for line in f:
-                if int(line.split()[-1]) != locals()[line[0]]:
-                    log.critical(f'Parameter <{line[0]}> does not match.')
-                    sys.exit(2)
+                if line[0] == 'v':
+                    version = packaging.version.parse(line.split()[-1])
+                    if packaging.version.parse(__version__) < version:
+                        log.critical(f'Database <{database}> requires <v{version}> or above.')
+                        sys.exit(2)
+                else:
+                    if int(line.split()[-1]) != locals()[line[0]]:
+                        log.critical(f'Parameter <{line[0]}> does not match.')
+                        sys.exit(2)
 
         with open(f'{database}/taxonomy.tab') as f:
             n = sum(1 for _ in f)
