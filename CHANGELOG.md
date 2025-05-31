@@ -1,4 +1,9 @@
 # Changelog
+## [1.1.1] - 2025-05-31
+### Fixed
+- Fix a bug causing error in database merging (`-d`).
+
+
 ## [1.1.0] - 2025-05-25
 ### Added
 - Add database version control.
