@@ -165,11 +165,11 @@ def parser_profile(parser):
     additional = parser_profile.add_argument_group('additional arguments - parsing')
     additional.add_argument(
         '-x',
-        '--min-dept',
+        '--min-cove',
         metavar='FLOAT',
         type=float,
         default=5,
-        help='Min. median (window) depth of sketches.')
+        help='Min. median per-window coverage of k-mers.')
 
     additional.add_argument(
         '-y',
@@ -177,7 +177,7 @@ def parser_profile(parser):
         metavar='FLOAT',
         type=float,
         default=np.inf,
-        help="Max. median (window) dispersion of sketches' counts.")
+        help="Max. median per-window dispersion of k-mers' counts.")
 
     additional.add_argument(
         '-z',
@@ -185,7 +185,7 @@ def parser_profile(parser):
         metavar='FLOAT',
         type=float,
         default=0.75,
-        help="Min. fraction of reference genomes' windows covered by sketches.")
+        help="Min. fraction of reference genomes' windows covered by k-mers.")
 
     additional.add_argument(
         '-c',

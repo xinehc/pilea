@@ -106,7 +106,7 @@ class GrowthProfiler:
                     os.remove(file)
 
     @staticmethod
-    def _filter(row, min_dept, max_disp, min_frac, min_cont):
+    def _filter(row, min_cove, max_disp, min_frac, min_cont):
         def _trim(x, return_limits=False):
             if x.size == 0:
                 return x
@@ -138,25 +138,25 @@ class GrowthProfiler:
 
         ## trim global/local outliers
         lower, upper = _trim(np.asarray(list(chain(*kcnt.values()))), return_limits=True)
-        depths, dispersions, observations = [], [], []
+        coverages, dispersions, observations = [], [], []
         for key, val in kcnt.items():
             val = np.asarray(val)
             val = _trim(val[(val >= lower) & (val <= upper)])
             if len(val) > max(1, int(key.rsplit(':', 1)[-1]) * min_cont):
                 mean, var = np.mean(val), np.var(val, ddof=1)
-                depths.append(mean)
+                coverages.append(mean)
                 dispersions.append(var / mean)
                 observations.append(val)
 
         if observations:
             if (
-                (depth := np.median(depths)) > min_dept and
+                (coverage := np.median(coverages)) > min_cove and
                 (dispersion := np.median(dispersions)) < max_disp and
                 (fraction := len(observations) / row[3]) > min_frac
             ):
-                return row[:3] + [depth, dispersion, fraction] + [row[4], observations]
+                return row[:3] + [coverage, dispersion, fraction] + [row[4], observations]
 
-    def parse(self, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=0.25):
+    def parse(self, min_cove=5, max_disp=np.inf, min_frac=0.75, min_cont=0.25):
         '''
         Parse and filter outputs of KMC.
         '''
@@ -223,7 +223,7 @@ class GrowthProfiler:
             self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := len(val) / info[key][-1]) > min_cont])
 
         ## prune local/global outliers
-        fun = partial(self._filter, max_disp=max_disp, min_dept=min_dept, min_frac=min_frac, min_cont=min_cont)
+        fun = partial(self._filter, min_cove=min_cove, max_disp=max_disp, min_frac=min_frac, min_cont=min_cont)
         self.data = [row for row in process_map(fun, self.data, max_workers=self.threads, chunksize=1, leave=False) if row]
 
     @staticmethod
@@ -263,18 +263,18 @@ class GrowthProfiler:
 
     def write(self):
         with open(f'{self.outdir}/output.tsv', 'w') as f:
-            f.write('\t'.join(['sample', 'genome', 'taxonomy', 'depth', 'dispersion', 'fraction', 'containment', 'ptr']) + '\n')
+            f.write('\t'.join(['sample', 'genome', 'taxonomy', 'coverage', 'dispersion', 'fraction', 'containment', 'ptr']) + '\n')
             for row in sorted(self.data, key=lambda row: (row[0], row[2], row[1])):
                 if row[-1] is not None:
                     f.write('\t'.join(row[:3] + [f'{x:.4f}' for x in row[3:]]) + '\n')
         log.info('Done.')
 
-def profile(files, outdir, database, force=False, single=False, min_dept=5, max_disp=np.inf, min_frac=0.75, min_cont=0.25, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
+def profile(files, outdir, database, force=False, single=False, min_cove=5, max_disp=np.inf, min_frac=0.75, min_cont=0.25, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
     '''
     Profile bacterial growth dynamics.
     '''
     gp = GrowthProfiler(files=files, outdir=outdir, database=database, force=force, single=single, threads=threads)
     gp.count()
-    gp.parse(max_disp=max_disp, min_dept=min_dept, min_frac=min_frac, min_cont=min_cont)
+    gp.parse(max_disp=max_disp, min_cove=min_cove, min_frac=min_frac, min_cont=min_cont)
     gp.infer(components=components, max_iter=max_iter, tol=tol)
     gp.write()
