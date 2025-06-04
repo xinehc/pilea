@@ -1,4 +1,12 @@
 # Changelog
+## [1.1.2] - 2025-06-04
+### Changed
+- Rename parameter `--min-dept` to `--min-cove` and column `depth` to `coverage`.
+
+### Fixed
+- Fix docstring.
+
+
 ## [1.1.1] - 2025-05-31
 ### Fixed
 - Fix a bug causing error in database merging (`-d`).
