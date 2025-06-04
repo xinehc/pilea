@@ -256,12 +256,18 @@ class GrowthProfiler:
             return np.median(w)
 
     def infer(self, components=5, max_iter=np.inf, tol=1e-5):
+        '''
+        Estiamte PTRs by fitting counts with ZTP.
+        '''
         log.info('Fitting counts ...')
         fun = partial(self._fit, components=components, max_iter=max_iter, tol=tol)
         for row, ptr in zip(self.data, process_map(fun, [row[-1] for row in self.data], max_workers=self.threads, chunksize=1, leave=False)):
             row[-1] = ptr
 
     def write(self):
+        '''
+        Write valid PTRs to output.
+        '''
         with open(f'{self.outdir}/output.tsv', 'w') as f:
             f.write('\t'.join(['sample', 'genome', 'taxonomy', 'coverage', 'dispersion', 'fraction', 'containment', 'ptr']) + '\n')
             for row in sorted(self.data, key=lambda row: (row[0], row[2], row[1])):

@@ -20,8 +20,9 @@ class ZTP:
 
     @threadpool_limits.wrap(limits=1)
     def fit(self, components, max_iter=np.inf, tol=1e-5):
-        """
-        """
+        '''
+        Fit finite mixture of ZTP distributions with EM.
+        '''
         lmds = np.quantile(self.x, [0.5] if components == 1 else [i / (components - 1) for i in range(components)])
         weights = np.repeat(1 / components, components)
 

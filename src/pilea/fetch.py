@@ -7,6 +7,9 @@ from .log import log
 
 
 def fetch(outdir):
+    '''
+    Donwload pre-built database from Zenodo.
+    '''
     record = 15469467
     stdout = subprocess.run([
         'wget', '-qO-', f'https://doi.org/10.5281/zenodo.{record}',

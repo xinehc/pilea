@@ -8,7 +8,7 @@ from .log import log
 
 def rebuild(outdir, k=31, s=250, w=25000, threads=os.cpu_count()):
     '''
-    Build a reference database by sketching GTDB assemblies
+    Build a reference database by sketching GTDB assemblies.
     '''
     ## download and extract necessary files
     os.makedirs(outdir, exist_ok=True)
