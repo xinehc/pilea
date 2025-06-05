@@ -10,7 +10,7 @@ def fetch(outdir):
     '''
     Donwload pre-built database from Zenodo.
     '''
-    record = 15469467
+    record = 15596115
     stdout = subprocess.run([
         'wget', '-qO-', f'https://doi.org/10.5281/zenodo.{record}',
     ], check=True, capture_output=True, text=True).stdout
