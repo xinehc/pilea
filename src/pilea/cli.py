@@ -28,7 +28,7 @@ def parser_index(parser):
         dest='files',
         nargs='+',
         metavar='file',
-        help='Input fasta <*.fa|*.fna|*.fasta> file(s), gzip optional <*.gz>.')
+        help='Input fasta <*.fa|*.fna|*.fasta> file(s), gzip optional <*.gz>, file list optional <.txt>.')
 
     required = parser_index.add_argument_group('required arguments')
     required.add_argument(

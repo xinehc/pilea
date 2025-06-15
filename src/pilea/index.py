@@ -8,7 +8,7 @@ from collections import defaultdict
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 from functools import partial
-from pkg_resources import packaging
+import packaging
 
 from .utils import ctar
 from .sketch import sketch
@@ -22,6 +22,16 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
     Update an existing database or construct a new one.
     '''
     pattern = '\\.(fa|fna|fasta)(\\.gz)?$'
+
+    if len(files) == 1 and files[0].endswith('.txt'):
+        if not os.path.isfile(files[0]):
+            log.critical(f'File list <{files[0]}> does not exist.')
+            sys.exit(2)
+        else:
+            with open(files[0]) as f:
+                files = []
+                for line in f:
+                    files.append(line.rstrip())
 
     files = sorted([file for file in files if re.search(pattern, file) and '*' not in file], key=os.path.basename)
     names = [re.sub(pattern, '', os.path.basename(file)) for file in files]

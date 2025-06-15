@@ -14,7 +14,7 @@ from itertools import chain
 from sklearn.linear_model import RANSACRegressor
 from scipy.stats import median_abs_deviation, iqr
 from statsmodels.nonparametric.smoothers_lowess import lowess
-from pkg_resources import packaging
+import packaging
 
 from .log import log
 from .kmc import KMC
