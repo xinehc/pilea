@@ -173,10 +173,8 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
         shutil.rmtree(f'{outdir}/database')
 
     ## clean up
+    shutil.rmtree(f'{outdir}/tmp', ignore_errors=True)
     for file in glob.glob(f'{outdir}/tmp*'):
-        try:
-            shutil.rmtree(file)
-        except NotADirectoryError:
-            os.remove(file)
+        os.remove(file)
 
     log.info('Done.')
