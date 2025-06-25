@@ -14,7 +14,7 @@ conda activate pilea
 ```
 
 ### Executing Pilea
-Download the [example dataset](https://doi.org/10.5281/zenodo.15681352) from Zenodo. This dataset contains 1 million paired-end short reads from four bacterial species (*Bacillus subtilis*, *Klebsiella pneumoniae*, *Morganella morganii*, and *Pseudomonas\_E putida\_U*):
+Download the [example dataset](https://doi.org/10.5281/zenodo.15681352) from Zenodo. This dataset contains 1 million paired-end short reads from four bacterial species (*Bacillus subtilis*, *Klebsiella pneumoniae*, *Morganella morganii*, and *Pseudomonas putida*):
 
 ```bash
 wget -qN --show-progress https://zenodo.org/records/15681353/files/example.tar.gz
