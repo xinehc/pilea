@@ -1,4 +1,15 @@
 # Changelog
+## [1.2.0] - 2025-06-25
+### Added
+- Support file list as input for indexing.
+
+### Changed
+- Avoid reconstructing dict for kmer reassignment.
+
+### Fixed
+- Ignore errors for `rmtree`.
+
+
 ## [1.1.2] - 2025-06-04
 ### Changed
 - Rename parameter `--min-dept` to `--min-cove` and column `depth` to `coverage`.
