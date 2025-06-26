@@ -124,8 +124,8 @@ class GrowthProfiler:
 
         A = []
         for val in row[-1]:
-            s = val[0].rsplit('|', 2)
-            A.append((int(s[1]), np.log2(val[1]), s[0]))
+            sp = val[0].rsplit('|', 2)
+            A.append((int(sp[1]), np.log2(val[1]), sp[0]))
 
         ## sort sketches by their GC content
         A = sorted(A, key=lambda x: x[0])
@@ -164,8 +164,8 @@ class GrowthProfiler:
         info = dict()
         with open(f'{self.database}/taxonomy.tab') as f:
             for i, line in enumerate(f.readlines()):
-                ls = line.rstrip().split('\t')
-                info[str(i)] = ls[0], ls[4], int(ls[2]), int(ls[3])
+                sp = line.rstrip().split('\t')
+                info[str(i)] = sp[0], sp[4], int(sp[2]), int(sp[3])
 
         ## load observed counts
         obs = defaultdict(dict)
@@ -196,29 +196,39 @@ class GrowthProfiler:
             ku, kd = defaultdict(list), defaultdict(set)
             for key, val in kcnt.items():
                 if (i := kuni.get(key)):
-                    s = i.split('|', 1)
-                    ku[s[0]].append((s[1], val))
+                    sp = i.split('|', 1)
+                    ku[sp[0]].append((sp[1], val))
                 else:
-                    for s in {i.split('|', 1)[0] for i in kdup[key]}:
-                        kd[s].add(key)
+                    for a in {i.split('|', 1)[0] for i in kdup[key]}:
+                        kd[a].add(key)
 
-            ## assign shared sketches based on containment
+            ## assign shared kmers based on containment
             ka = dict()
             kc = {key: len(val) / info[key][-1] for key, val in ku.items()}
             while kd:
-                accession = max(kd, key = lambda key: kc.get(key, 0) + len(kd[key]) / info[key][-1])
-                sketches = kd.pop(accession)
-                kd = {key: nval for key, val in kd.items() if kc.get(key, 0) + len(nval := val - sketches) / info[key][-1] > min_cont}
+                ba = max(kd, key = lambda a: kc.get(a, 0) + len(kd[a]) / info[a][-1])
+                bs = kd.pop(ba)
 
-                kc[accession] = kc.get(accession, 0) + len(sketches) / info[accession][-1]
-                ka[accession] = sketches
+                da = []
+                for oa, os in kd.items():
+                    ns = os - bs
+                    if kc.get(oa, 0) + len(ns) / info[oa][-1] > min_cont:
+                        kd[oa] = ns
+                    else:
+                        da.append(oa)
 
-            for accession, sketches in ka.items():
-                for idx, val in [(kdup[sketch], kcnt[sketch]) for sketch in sorted(sketches)]:
-                    if len({s for i in idx if kc.get(s := i.split('|', 1)[0], 0) > min_cont}) == 1:
+                for a in da:
+                    del kd[a]
+
+                kc[ba] = kc.get(ba, 0) + len(bs) / info[ba][-1]
+                ka[ba] = bs
+
+            for ba, bs in ka.items():
+                for idx, val in [(kdup[s], kcnt[s]) for s in sorted(bs)]:
+                    if len({a for i in idx if kc.get(a := i.split('|', 1)[0], 0) > min_cont}) == 1:
                         for i in idx:
-                            if i[-1] == '+' and (s := i.split('|', 1))[0] == accession:
-                                ku[s[0]].append((s[1], val))
+                            if i[-1] == '+' and (sp := i.split('|', 1))[0] == ba:
+                                ku[sp[0]].append((sp[1], val))
 
             self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := len(val) / info[key][-1]) > min_cont])
 
