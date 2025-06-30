@@ -43,7 +43,7 @@ class ZTP:
             old_logl = logl
 
             ## update lmds
-            R = com_probs / mix_probs[:, None]
+            R = com_probs / mix_probs[:, None] + self.e
             Z = R.T.dot(self.x) / R.sum(axis=0)
             for _ in range(max_iter):
                 lmds = Z * (1 - np.exp(-old_lmds))
