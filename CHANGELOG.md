@@ -1,4 +1,9 @@
 # Changelog
+## [1.2.1] - 2025-06-30
+### Fixed
+- Add np.eps to R to prevent RuntimeWarning in rare cases.
+
+
 ## [1.2.0] - 2025-06-25
 ### Added
 - Support file list as input for indexing.
