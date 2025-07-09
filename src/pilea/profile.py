@@ -127,7 +127,7 @@ class GrowthProfiler:
             sp = val[0].rsplit('|', 2)
             A.append((int(sp[1]), np.log2(val[1]), sp[0]))
 
-        ## sort sketches by their GC content
+        ## sort kmers by their GC content
         A = sorted(A, key=lambda x: x[0])
         Y = _debias(x=[a[0] for a in A], y=[a[1] for a in A])
 
@@ -175,7 +175,7 @@ class GrowthProfiler:
                 for line in f:
                     obs[sample][line[:self.k]] = int(line[self.k + 1:-1])
 
-        ## load sketches' mapping files
+        ## load sketch mapping files
         kuni, kdup = dict(), dict()
         kset = {x for key, val in obs.items() for x in val.keys()}
         with open(f'{self.database}/sketch.uni') as f, open(f'{self.database}/sketch.dup') as g:
@@ -185,21 +185,21 @@ class GrowthProfiler:
 
             for line in g:
                 if line[:self.k] in kset:
-                    kdup[line[:self.k]] = line[self.k + 1:-1].split(',')
+                    kdup[line[:self.k]] = line[self.k + 1:-1]
 
         log.info('Parsing and filtering outputs ...')
         queue = tqdm(obs.items(), leave=False)
         for sample, kcnt in queue:
             queue.set_description(f'==> Processing <{sample}>')
 
-            ## assign unique sketches directly
+            ## assign unique kmers directly
             ku, kd = defaultdict(list), defaultdict(set)
             for key, val in kcnt.items():
                 if (i := kuni.get(key)):
                     sp = i.split('|', 1)
                     ku[sp[0]].append((sp[1], val))
                 else:
-                    for a in {i.split('|', 1)[0] for i in kdup[key]}:
+                    for a in kdup[key].replace(',', '|').split('|')[::4]:
                         kd[a].add(key)
 
             ## assign shared kmers based on containment
@@ -224,11 +224,12 @@ class GrowthProfiler:
                 ka[ba] = bs
 
             for ba, bs in ka.items():
-                for idx, val in [(kdup[s], kcnt[s]) for s in sorted(bs)]:
-                    if len({a for i in idx if kc.get(a := i.split('|', 1)[0], 0) > min_cont}) == 1:
+                for idx, val in [(kdup[s].split(','), kcnt[s]) for s in sorted(bs)]:
+                    idx = [(i, j[0], j[1]) for i in idx if kc.get((j := i.split('|', 1))[0], 0) > min_cont]
+                    if len({i[1] for i in idx}) == 1:
                         for i in idx:
-                            if i[-1] == '+' and (sp := i.split('|', 1))[0] == ba:
-                                ku[sp[0]].append((sp[1], val))
+                            if i[0][-1] == '+' and i[1] == ba:
+                                ku[i[1]].append((i[2], val))
 
             self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := len(val) / info[key][-1]) > min_cont])
 
