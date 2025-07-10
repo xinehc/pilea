@@ -124,7 +124,7 @@ class GrowthProfiler:
 
         A = []
         for val in row[-1]:
-            sp = val[0].rsplit('|', 2)
+            sp = val[0].rsplit(':', 1)
             A.append((int(sp[1]), np.log2(val[1]), sp[0]))
 
         ## sort kmers by their GC content
@@ -197,9 +197,9 @@ class GrowthProfiler:
             for key, val in kcnt.items():
                 if (i := kuni.get(key)):
                     sp = i.split('|', 1)
-                    ku[sp[0]].append((sp[1], val))
+                    ku[sp[0]].append((sp[1][:-2], val))
                 else:
-                    for a in kdup[key].replace(',', '|').split('|')[::4]:
+                    for a in kdup[key].replace(',', '|').split('|')[::2]:
                         kd[a].add(key)
 
             ## assign shared kmers based on containment
@@ -213,23 +213,22 @@ class GrowthProfiler:
                 ba = max(kd, key = lambda a: kc.get(a, 0) + len(kd[a]) / info[a][-1])
                 bs = kd.pop(ba)
 
-                sa = set().union(*[kdup[s].replace(',', '|').split('|')[::4] for s in bs])
+                sa = set().union(*[kdup[s].replace(',', '|').split('|')[::2] for s in bs])
                 for a in sa:
                     if a in kd:
                         kd[a] -= bs
                         if kc.get(a, 0) + len(kd[a]) / info[a][-1] <= min_cont:
-                            del kd[a]                      
+                            del kd[a]
 
                 kc[ba] = kc.get(ba, 0) + len(bs) / info[ba][-1]
                 ka[ba] = sorted(bs)
 
             for ba, bs in ka.items():
-                for idx, val in [(kdup[s].split(','), kcnt[s]) for s in bs]:
-                    idx = [(i, j[0], j[1]) for i in idx if kc.get((j := i.split('|', 1))[0], 0) > min_cont]
-                    if len({i[1] for i in idx}) == 1:
-                        for i in idx:
-                            if i[0][-1] == '+' and i[1] == ba:
-                                ku[i[1]].append((i[2], val))
+                for s in bs:
+                    val, cnt = kdup[s].replace(',', '|').split('|'), kcnt[s]
+                    idx = [j for i,j in zip(val[::2], val[1::2]) if i in ka and kc.get(i) > min_cont]
+                    if len(idx) == 1 and idx[0][-1] == '+':
+                        ku[ba].append((idx[0][:-2], cnt))
 
             self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := len(val) / info[key][-1]) > min_cont])
 

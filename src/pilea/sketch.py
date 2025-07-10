@@ -37,5 +37,5 @@ def sketch(file, folder, k, s, w):
             if (sins := sum(not kmer in kdup for kmer, _ in kpos)) > 1:
                 wins += 1
             for kmer, gc in kpos:
-                f.write(f'>{idx}|{widx}:{sins}|{gc}|{"-" if kmer in kdup else "+"}\n{kmer}\n')
+                f.write(f'>{idx}|{widx}:{sins}:{gc}:{"-" if kmer in kdup else "+"}\n{kmer}\n')
     return idx, (name, len(set(i.split('|')[0] for i in ctgs.keys())), wins, len(kcnt))
