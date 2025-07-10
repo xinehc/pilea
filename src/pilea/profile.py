@@ -95,13 +95,13 @@ class GrowthProfiler:
         with logging_redirect_tqdm():
             for sample, file in queue:
                 queue.set_description(f'==> Processing <{sample}>')
-                if os.path.isfile(f'{self.outdir}/{sample}.sketch') and not self.force:
-                    log.info(f'File <{self.outdir}/{sample}.sketch> exists, skip. Use <--force> for overwritting.')
+                if os.path.isfile(f'{self.outdir}/{sample}.kmc') and not self.force:
+                    log.info(f'File <{self.outdir}/{sample}.kmc> exists, skip. Use <--force> for overwritting.')
                 else:
                     kmc = KMC(file=file, prefix=f'{self.outdir}/{sample}', threads=self.threads)
                     kmc.count(k=self.k, f=self.f, ci=1)
-                    kmc.intersect(in_prefix=f'{self.outdir}/{sample}', ref_prefix=f'{self.database}/sketch', out_prefix=f'{self.outdir}/{sample}.sketch')
-                    kmc.dump(f'{self.outdir}/{sample}.sketch')
+                    kmc.intersect(in_prefix=f'{self.outdir}/{sample}', ref_prefix=f'{self.database}/sketch', out_prefix=f'{self.outdir}/{sample}.kmc')
+                    kmc.dump(f'{self.outdir}/{sample}.kmc')
                 for file in glob.glob(f'{self.outdir}/{sample}.*kmc_*'):
                     os.remove(file)
 
@@ -170,7 +170,7 @@ class GrowthProfiler:
         ## load observed counts
         obs = defaultdict(dict)
         for sample in self.files.keys():
-            file = f'{self.outdir}/{sample}.sketch'
+            file = f'{self.outdir}/{sample}.kmc'
             with open(file) as f:
                 for line in f:
                     obs[sample][line[:self.k]] = int(line[self.k + 1:-1])
