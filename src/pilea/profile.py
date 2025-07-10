@@ -205,26 +205,26 @@ class GrowthProfiler:
             ## assign shared kmers based on containment
             ka = dict()
             kc = {key: len(val) / info[key][-1] for key, val in ku.items()}
+            for a in list(kd):
+                if kc.get(a, 0) + len(kd[a]) / info[a][-1] <= min_cont:
+                    del kd[a]
+
             while kd:
                 ba = max(kd, key = lambda a: kc.get(a, 0) + len(kd[a]) / info[a][-1])
                 bs = kd.pop(ba)
 
-                da = []
-                for oa, os in kd.items():
-                    ns = os - bs
-                    if kc.get(oa, 0) + len(ns) / info[oa][-1] > min_cont:
-                        kd[oa] = ns
-                    else:
-                        da.append(oa)
-
-                for a in da:
-                    del kd[a]
+                sa = set().union(*[kdup[s].replace(',', '|').split('|')[::4] for s in bs])
+                for a in sa:
+                    if a in kd:
+                        kd[a] -= bs
+                        if kc.get(a, 0) + len(kd[a]) / info[a][-1] <= min_cont:
+                            del kd[a]                      
 
                 kc[ba] = kc.get(ba, 0) + len(bs) / info[ba][-1]
-                ka[ba] = bs
+                ka[ba] = sorted(bs)
 
             for ba, bs in ka.items():
-                for idx, val in [(kdup[s].split(','), kcnt[s]) for s in sorted(bs)]:
+                for idx, val in [(kdup[s].split(','), kcnt[s]) for s in bs]:
                     idx = [(i, j[0], j[1]) for i in idx if kc.get((j := i.split('|', 1))[0], 0) > min_cont]
                     if len({i[1] for i in idx}) == 1:
                         for i in idx:
