@@ -1,4 +1,9 @@
 # Changelog
+## [1.2.2] - 2025-07-10
+### Fixed
+- Reduce peak memory usage for highly redundant database.
+
+
 ## [1.2.1] - 2025-06-30
 ### Fixed
 - Add np.eps to R to prevent RuntimeWarning in rare cases.
