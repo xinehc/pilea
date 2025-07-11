@@ -225,10 +225,10 @@ class GrowthProfiler:
 
             for ba, bs in ka.items():
                 for s in bs:
-                    val, cnt = kdup[s].replace(',', '|').split('|'), kcnt[s]
-                    idx = [j for i,j in zip(val[::2], val[1::2]) if i in ka and kc.get(i) > min_cont]
+                    val = kdup[s].replace(',', '|').split('|')
+                    idx = [j for i,j in zip(val[::2], val[1::2]) if i in ka]
                     if len(idx) == 1 and idx[0][-1] == '+':
-                        ku[ba].append((idx[0][:-2], cnt))
+                        ku[ba].append((idx[0][:-2], kcnt[s]))
 
             self.data.extend([[sample, *info[key][:-1], cont, val] for key, val in ku.items() if (cont := len(val) / info[key][-1]) > min_cont])
 

@@ -5,7 +5,6 @@ import sys
 import re
 
 from collections import defaultdict
-from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 from functools import partial
 import packaging
