@@ -1,4 +1,9 @@
 # Changelog
+## [1.2.3] - 2025-07-11
+### Changed
+- Simplify database format to reduce computational time for highly redundant database.
+- Temporary file `.sketch` -> `.kmc`.
+
 ## [1.2.2] - 2025-07-10
 ### Fixed
 - Reduce peak memory usage for highly redundant database.
