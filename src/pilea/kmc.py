@@ -10,7 +10,7 @@ class KMC:
         """
         self.file = file
         self.prefix = prefix
-        self.threads = threads
+        self.threads = min(threads, 128)
 
         os.makedirs(f'{self.prefix}.kmc', exist_ok=True)
         if isinstance(self.file, list):
