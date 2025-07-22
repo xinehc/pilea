@@ -1,4 +1,9 @@
 # Changelog
+## [1.2.4] - 2025-07-22
+### Fixed
+- Cap KMC threads to 128.
+
+
 ## [1.2.3] - 2025-07-11
 ### Changed
 - Simplify database format to reduce computational time for highly redundant database.
