@@ -20,7 +20,7 @@ import packaging
 
 from .log import log
 from .ztp import ZTP
-from .utils import u8, u3
+from .utils import u2, u8
 from .kmc import count64
 
 from . import __version__
@@ -106,15 +106,15 @@ class GrowthProfiler:
                 self.meta[int(i)] = sp[0], sp[4], int(sp[3]), int(sp[2])
 
     @staticmethod
-    def _collect(items, k, m, outdir, force, REC=11):
+    def _collect(items, k, m, outdir, force, REC=10):
         sample, files = items
         kmc = f'{outdir}/{sample}.kmc'
         if os.path.isfile(kmc) and not force:
             with open(kmc, 'rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
                 n = mm.size() // REC
                 keys = np.ndarray(shape=(n,), dtype='>u8', buffer=mm, offset=0, strides=(REC,))
-                cnts = np.ndarray(shape=(n, 3), dtype='>u1',  buffer=mm, offset=8, strides=(REC, 1)).astype(np.uint32, copy=False)
-                counts = {int(k): int(c) for k, c in zip(keys, (cnts[:, 0] << 16) | (cnts[:, 1] << 8) | cnts[:, 2])}
+                cnts = np.ndarray(shape=(n,), dtype='>u2', buffer=mm, offset=8, strides=(REC,))
+                counts = {int(k): int(c) for k, c in zip(keys, cnts)}
         else:
             counts = {}
             if len(files) == 1:
@@ -265,7 +265,7 @@ class GrowthProfiler:
                 with open(f'{self.outdir}/{sample}.kmc', 'wb') as f:
                     for key, cnt in kmc.items():
                         f.write(u8(key))
-                        f.write(u3(cnt))
+                        f.write(u2(cnt))
 
             ku, kd = defaultdict(list), defaultdict(set)
             for key, cnt in kmc.items():
