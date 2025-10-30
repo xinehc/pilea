@@ -16,7 +16,7 @@ from .log import log
 from . import __version__
 
 
-def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=250, w=25000, threads=os.cpu_count()):
+def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=500, w=25000, threads=os.cpu_count()):
     '''
     Update an existing database or construct a new one.
     '''

@@ -80,7 +80,7 @@ def parser_index(parser):
         dest='s',
         metavar='INT',
         type=int,
-        default=250,
+        default=500,
         help='Scale for downsampling.')
 
     additional.add_argument(
@@ -264,7 +264,7 @@ def parser_rebuild(parser):
         dest='s',
         metavar='INT',
         type=int,
-        default=250,
+        default=500,
         help='Scale for downsampling.')
 
     additional.add_argument(
