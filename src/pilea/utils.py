@@ -5,6 +5,11 @@ import sys
 from .log import log
 
 
+def u1(x): return x.to_bytes(1, 'big', signed=False)
+def u2(x): return x.to_bytes(2, 'big', signed=False)
+def u3(x): return x.to_bytes(3, 'big', signed=False)
+def u8(x): return x.to_bytes(8, 'big', signed=False)
+
 def wget(file, folder):
     os.makedirs(folder, exist_ok=True)
     stderr = subprocess.run([
