@@ -11,12 +11,13 @@ class ZTP:
         https://doi.org/10.1111/j.1541-0420.2006.00565.x
         '''
         self.x = np.asarray(x)
+        self.g = gammaln(self.x + 1)
         self.n = len(x)
         self.e = np.finfo(float).eps
 
     @staticmethod
-    def _pmf(x, lmd):
-        return np.exp(x * np.log(lmd) - lmd - gammaln(x + 1)) / (1 - np.exp(-lmd))
+    def _pmf(x, g, lmd):
+        return np.exp(x * np.log(lmd) - lmd - g) / (-np.expm1(-lmd))
 
     @threadpool_limits.wrap(limits=1)
     def fit(self, components, max_iter=np.inf, tol=1e-5):
@@ -33,7 +34,7 @@ class ZTP:
         for _ in range(max_iter):
 
             ## get probabilities
-            com_probs = self._pmf(self.x[:, None], lmds[None, :]) * weights
+            com_probs = self._pmf(self.x[:, None], self.g[:, None], lmds[None, :]) * weights
             mix_probs = com_probs.sum(axis=1) + self.e
 
             ## test for log-likelihood convergence
@@ -46,7 +47,7 @@ class ZTP:
             R = com_probs / mix_probs[:, None] + self.e
             Z = R.T.dot(self.x) / R.sum(axis=0)
             for _ in range(max_iter):
-                lmds = Z * (1 - np.exp(-old_lmds))
+                lmds = Z * (-np.expm1(-old_lmds))
                 if np.allclose(lmds, old_lmds, atol=tol, rtol=0):
                     break
                 old_lmds = lmds.copy()
@@ -54,5 +55,5 @@ class ZTP:
             ## update weights
             weights = R.sum(axis=0) / self.n
 
-        bic = -2 * logl + (2 * components - 1) * np.log(len(self.x))
+        bic = -2 * logl + (2 * components - 1) * np.log(self.n)
         return lmds, weights / weights.sum(), bic
