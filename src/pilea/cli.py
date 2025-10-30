@@ -111,6 +111,15 @@ def parser_fetch(parser):
         metavar='DIR',
         help='Output directory.')
 
+    optional = parser_fetch.add_argument_group('optional arguments')
+    optional.add_argument(
+        '-t',
+        '--threads',
+        metavar='INT',
+        type=int,
+        default=os.cpu_count(),
+        help=f'Number of threads.')
+
     parser_fetch.add_argument('-v', '--version', action='version', version=__version__, help=argparse.SUPPRESS)
     parser_fetch.add_argument('-h', '--help', action='help', help=argparse.SUPPRESS)
     parser_fetch.set_defaults(func=fetch)

@@ -35,7 +35,7 @@ pilea index mags/*.fna -a gtdbtk.bac120.summary.tsv -o db
 <ins>***Step 2: Profiling***</ins>
 
 > [!TIP]
-> If multiple samples are available, running them in a single batch (`*.fasta`) can help avoid repeatedly loading the reference database, which can be time-consuming if the database is large.
+> If multiple samples are available, running them in a single batch (`*.fasta`) helps avoid repeated database loading, which can be time-consuming if the database is large.
 
 Both FASTA (`fa|fasta`) and FASTQ (`fq|fastq`) files are supported. By default, paired-end reads are identified with pattern `_(1|2|R1|R2|fwd|rev)`. Use `--single` for single-end reads. PTR estimates and other metadata for MAGs that pass basic filters will be saved to `output.tsv`.
 

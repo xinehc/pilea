@@ -21,7 +21,6 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=5
     Update an existing database or construct a new one.
     '''
     pattern = '\\.(fa|fna|fasta)(\\.gz)?$'
-
     if len(files) == 1 and files[0].endswith('.txt'):
         if not os.path.isfile(files[0]):
             log.critical(f'File list <{files[0]}> does not exist.')
@@ -168,7 +167,7 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=5
         os.makedirs(f'{outdir}/database', exist_ok=True)
         for file in glob.glob(f'{outdir}/*.tab') + glob.glob(f'{outdir}/sketch.*'):
             shutil.copyfile(file, f'{outdir}/database/{os.path.basename(file)}')
-        ctar(file=f'database', folder=outdir)
+        ctar(file=f'database', folder=outdir, threads=threads)
         shutil.rmtree(f'{outdir}/database')
 
     ## clean up
