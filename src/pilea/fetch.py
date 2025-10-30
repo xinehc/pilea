@@ -6,7 +6,7 @@ from .utils import wget, xtar
 from .log import log
 
 
-def fetch(outdir):
+def fetch(outdir, threads=os.cpu_count()):
     '''
     Donwload pre-built database from Zenodo.
     '''
@@ -20,7 +20,7 @@ def fetch(outdir):
     wget(file=file, folder=outdir)
 
     log.info('Extracting files ...')
-    xtar(file=f'{outdir}/database.tar.gz', folder=outdir)
+    xtar(file=f'{outdir}/database.tar.gz', folder=outdir, threads=threads)
     os.remove(f'{outdir}/database.tar.gz')
 
     log.info('Done.')

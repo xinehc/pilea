@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 64"]
+requires = ["setuptools>=64", "wheel", "Cython>=3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -13,9 +13,8 @@ license = {file = "LICENSE"}
 dynamic = ["version"]
 requires-python = ">=3.7"
 dependencies = [
-    "mmh3",
     "tqdm",
-    "biopython",
+    "needletail",
     "statsmodels",
     "scikit-learn",
     "rich-argparse",
@@ -27,3 +26,11 @@ pilea = "pilea.cli:cli"
 
 [tool.setuptools.dynamic]
 version = {attr = "pilea.__version__"}
+
+[[tool.setuptools.ext-modules]]
+name = "pilea.kmc"
+sources = ["src/pilea/kmc.pyx"]
+language = "c"
+
+[tool.cython]
+language_level = "3"
