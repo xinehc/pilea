@@ -82,7 +82,7 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=5
             metadata = {key[3:]: val for key, val in metadata.items()}
 
     log.info('Sketching ...')
-    files = [(*file, n + idx) for idx, file in enumerate([(file, name) for file, name in zip(files, names) if name in metadata])]
+    files = [(*file, n + gid) for gid, file in enumerate([(file, name) for file, name in zip(files, names) if name in metadata])]
     files = process_map(partial(sketch, folder=tmpdir, k=k, s=s, w=w), files, max_workers=threads, chunksize=1, leave=False)
 
     log.info('Writing ...')
