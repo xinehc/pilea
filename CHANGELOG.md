@@ -1,4 +1,16 @@
 # Changelog
+## [1.3.0] - 2025-10-30
+### Changed
+- Remove dependency on `kmc` for k-mer counting.
+- Change MurmurHash3 to minimap2's hash64 (https://github.com/lh3/minimap2/blob/master/sketch.c).
+- Use 19 bytes to store sketches and 10 bytes to store counts.
+- Parallel database compression/decompression with `pigz`.
+- Change default `-s` from 250 to 500.
+
+### Fixed
+- Fix panic on macOS with `--force`.
+
+
 ## [1.2.4] - 2025-07-22
 ### Fixed
 - Cap KMC threads to 128.
