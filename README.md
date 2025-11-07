@@ -13,7 +13,7 @@ conda create -n pilea -c bioconda -c conda-forge pilea
 conda activate pilea
 ```
 
-### Executing Pilea
+### Running Pilea
 Download the [example dataset](https://doi.org/10.5281/zenodo.15681352) from Zenodo. This dataset contains 1 million paired-end short reads from four bacterial species (*Bacillus subtilis*, *Klebsiella pneumoniae*, *Morganella morganii*, and *Pseudomonas putida*):
 
 ```bash
@@ -24,7 +24,7 @@ tar -xvf example.tar.gz && cd example
 <ins>***Step 1: Indexing***</ins>
 
 > [!TIP]
-> If MAGs aren't available, use `pilea fetch` to download a pre-built [GTDB database](https://doi.org/10.5281/zenodo.15596115). This reference database was constructed with `pilea rebuild`.
+> If MAGs aren't available, use `pilea fetch` to download a pre-built [GTDB database](https://doi.org/10.5281/zenodo.15596115). This reference database was constructed with `pilea rebuild`. If MAGs are available, they can be merged with the GTDB database via `-d/--database`. See `pilea index -h` for details.
 
 The taxonomy mapping file (`-a/--taxonomy`) is optional. If provided, it needs to be a tab-separated file containing at least two columns (genome and its associated taxonomy). This file can be the output of GTDB-Tk (`gtdbtk.bac120.summary.tsv`) and should include only bacteria (no archaea or non-prokaryotes). MAGs must have extensions in `.(fa|fna|fasta)`.
 
