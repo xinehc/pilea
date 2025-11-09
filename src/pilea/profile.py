@@ -253,7 +253,7 @@ class GrowthProfiler:
         log.info('Counting k-mers ...')
         kmc = [file for file in glob.glob(f'{self.outdir}/*.kmc') if os.path.basename(file).split('.kmc')[0] in self.items]
         if kmc and not self.force:
-            log.info(f"File {' '.join(f'<{os.path.basename(file)}>' for file in kmc)} exists, skip. Use <--force> for overwritting.")
+            log.info(f"File {' '.join(f'<{os.path.basename(file)}>' for file in kmc)} exists, skip. Use <--force> for overwriting.")
 
         arr = set()
         obs = dict()
