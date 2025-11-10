@@ -3,12 +3,12 @@ import re
 import os
 import mmap
 import glob
+import struct
 import numpy as np
 import multiprocessing as mp
 
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
-from tqdm.contrib.logging import logging_redirect_tqdm
 from collections import defaultdict
 from functools import partial
 from itertools import chain
@@ -103,18 +103,15 @@ class GrowthProfiler:
         with open(f'{self.database}/genomes.tab') as f:
             for i, line in enumerate(f.readlines()):
                 sp = line.rstrip().split('\t')
-                self.meta[int(i)] = sp[0], sp[4], int(sp[3]), int(sp[2])
+                self.meta[i] = sp[0], sp[4], int(sp[3]), int(sp[2])
 
     @staticmethod
-    def _collect(items, k, m, outdir, force, REC=10):
+    def _collect(items, k, m, outdir, force, REC=struct.Struct('<QH')):
         sample, files = items
         kmc = f'{outdir}/{sample}.kmc'
         if os.path.isfile(kmc) and not force:
             with open(kmc, 'rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                n = mm.size() // REC
-                keys = np.ndarray(shape=(n,), dtype='<u8', buffer=mm, offset=0, strides=(REC,))
-                cnts = np.ndarray(shape=(n,), dtype='<u2', buffer=mm, offset=8, strides=(REC,))
-                counts = dict(zip(keys.tolist(), cnts))
+                counts = {key: cnt for (key, cnt) in REC.iter_unpack(mm)}
         else:
             counts = {}
             if len(files) == 1:
@@ -126,46 +123,85 @@ class GrowthProfiler:
                 it2 = parse_fastx_file(files[1])
                 for record1, record2 in zip(it1, it2):
                     count64(record1.seq, record2.seq, k, m, counts)
+
+            with open(kmc, 'wb') as f:
+                for key, cnt in counts.items():
+                    f.write(u8(key))
+                    f.write(u2(cnt))
         return sample, counts
 
     @staticmethod
     def _load(file, arr, REC=19, CHUNK_RECS=2500000):
-        pdb = defaultdict(list)
+        pdb = defaultdict(bytearray)
         if arr.size == 0:
             return pdb
 
         buf = bytearray(CHUNK_RECS * REC)
-        mv  = memoryview(buf)
-
         total_recs = os.path.getsize(file) // REC
         total_chunks = (total_recs + CHUNK_RECS - 1) // CHUNK_RECS
-        with open(file, 'rb', buffering=0) as f, tqdm(total=total_chunks, leave=False) as pbar:
+        with open(file, 'rb') as f, tqdm(total=total_chunks, leave=False) as pbar:
             while True:
-                nbytes = f.readinto(mv)
+                nbytes = f.readinto(buf)
                 if nbytes <= 0:
                     break
 
                 n = nbytes // REC
-                rows = np.frombuffer(mv, dtype=np.uint8, count=n * REC).reshape(n, REC)
+                rows = np.frombuffer(buf, dtype=np.uint8, count=n * REC).reshape(n, REC)
                 keys = rows[:, :8].view('<u8').ravel()
 
                 order = np.argsort(keys)
                 mask = np.isin(keys[order], arr, assume_unique=True)
-                ids = order[np.flatnonzero(mask)]
 
-                ## decode payloads
-                b = rows[ids, 8:19]
-                gid = b[:, 0:4].view('<u4').ravel()
-                wid = b[:, 4:6].view('<u2').ravel()
-                sin = b[:, 6:8].view('<u2').ravel()
-                gc = b[:, 8:10].view('<u2').ravel()
-                uq = b[:, 10] != 0
-
-                for key, gi, wi, s, g, u in zip(keys[ids].tolist(), gid, wid, sin, gc, uq):
-                    pdb[key].append((gi, wi, s, g, u))
+                for i in order[np.flatnonzero(mask)]:
+                    pdb[int(keys[i])].extend(rows[i, 8:19])
 
                 pbar.update(1)
         return pdb
+
+    @staticmethod
+    def _assign(kmc, pdb, meta, min_cont):
+        def _decode(b, gid, REC=struct.Struct('<IHHHB'), GID=struct.Struct('<I7x')):
+            return GID.iter_unpack(b) if gid else REC.iter_unpack(b)
+
+        ku, kd = defaultdict(list), defaultdict(set)
+        for key, cnt in kmc.items():
+            m = len(b := pdb[key]) // 11
+            if m == 1:
+                p = next(_decode(b, gid=False))
+                ku[p[0]].append((p[1:4], cnt))
+            else:
+                for (gid,) in _decode(b, gid=True):
+                    kd[gid].add(key)
+
+        ka = {}
+        kc = {gid: len(val) / meta[gid][-1] for gid, val in ku.items()}
+        for gid in list(kd):
+            if kc.get(gid, 0) + len(kd[gid]) / meta[gid][-1] <= min_cont:
+                del kd[gid]
+
+        while kd:
+            ba = max(kd, key=lambda gid: kc.get(gid, 0) + len(kd[gid]) / meta[gid][-1])
+            bs = kd.pop(ba)
+
+            sa = set()
+            for s in bs:
+                sa.update(gid for (gid,) in _decode(pdb[s], gid=True))  # relevant gid
+
+            for gid in sa & kd.keys():
+                kd[gid] -= bs
+                if kc.get(gid, 0) + len(kd[gid]) / meta[gid][-1] <= min_cont:
+                    del kd[gid]
+
+            kc[ba] = kc.get(ba, 0) + len(bs) / meta[ba][-1]
+            ka[ba] = sorted(bs)
+
+        for ba, bs in ka.items():
+            for s in bs:
+                i = (p for p in _decode(pdb[s], gid=False) if p[0] in ka)
+                p = next(i)
+                if next(i, None) is None and p[-1]:  # unique
+                    ku[ba].append((p[1:4], kmc[s]))
+        return ku
 
     @staticmethod
     def _filter(row, min_cove, max_disp, min_frac, min_cont):
@@ -258,11 +294,10 @@ class GrowthProfiler:
         arr = set()
         obs = dict()
         fun = partial(self._collect, k=self.k, m=self.m, outdir=self.outdir, force=self.force)
-        with logging_redirect_tqdm():
-            with mp.Pool(self.threads) as pool:
-                for sample, counts in tqdm(pool.imap_unordered(fun, self.items.items(), chunksize=1), total=len(self.items), leave=False):
-                    obs[sample] = counts
-                    arr.update(counts.keys())
+        with mp.Pool(self.threads) as pool:
+            for sample, counts in tqdm(pool.imap_unordered(fun, self.items.items(), chunksize=1), total=len(self.items), leave=False):
+                obs[sample] = counts
+                arr.update(counts.keys())
 
         arr = np.fromiter(arr, dtype='<u8', count=len(arr))
         arr.sort()
@@ -273,50 +308,7 @@ class GrowthProfiler:
         log.info('Parsing and filtering outputs ...')
         for sample in tqdm(list(obs.keys()), leave=False):
             kmc = {k: v for k, v in obs.pop(sample).items() if k in pdb}  # recast
-            if not os.path.isfile(f'{self.outdir}/{sample}.kmc') or self.force:
-                with open(f'{self.outdir}/{sample}.kmc', 'wb') as f:
-                    for key, cnt in kmc.items():
-                        f.write(u8(key))
-                        f.write(u2(cnt))
-
-            ku, kd = defaultdict(list), defaultdict(set)
-            for key, cnt in kmc.items():
-                if len(pay := pdb.get(key)) == 1:  # unique
-                    ku[pay[0][0]].append((pay[0][1:4], cnt))
-                else:
-                    for gid, *_ in pay:
-                        kd[gid].add(key)
-
-            ka = {}
-            kc = {gid: len(val) / self.meta[gid][-1] for gid, val in ku.items()}
-            for gid in list(kd):
-                if kc.get(gid, 0) + len(kd[gid]) / self.meta[gid][-1] <= min_cont:
-                    del kd[gid]
-
-            while kd:
-                ba = max(kd, key=lambda gid: kc.get(gid, 0) + len(kd[gid]) / self.meta[gid][-1])
-                bs = kd.pop(ba)
-
-                sa = set()
-                for s in bs:
-                    for gid, *_ in pdb[s]:
-                        sa.add(gid)  # relevant gid
-
-                for gid in sa & kd.keys():
-                    kd[gid] -= bs
-                    if kc.get(gid, 0) + len(kd[gid]) / self.meta[gid][-1] <= min_cont:
-                        del kd[gid]
-
-                kc[ba] = kc.get(ba, 0) + len(bs) / self.meta[ba][-1]
-                ka[ba] = sorted(bs)
-
-            for ba, bs in ka.items():
-                for s in bs:
-                    cand = [pay for pay in pdb[s] if pay[0] in ka]
-                    if len(cand) == 1 and cand[0][4]:  # exactly one candidate and flag is +
-                        ku[ba].append((cand[0][1:4], kmc[s]))
-
-            self.data.extend([[sample, *self.meta[gid][:-1], cont, info] for gid, info in ku.items() if (cont := len(info) / self.meta[gid][-1]) > min_cont])
+            self.data.extend([[sample, *self.meta[gid][:-1], cont, p] for gid, p in self._assign(kmc, pdb, self.meta, min_cont).items() if (cont := len(p) / self.meta[gid][-1]) > min_cont])
 
         ## prune local/global outliers
         fun = partial(self._filter, min_cove=min_cove, max_disp=max_disp, min_frac=min_frac, min_cont=min_cont)
