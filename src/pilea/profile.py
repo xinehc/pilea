@@ -20,7 +20,7 @@ import packaging
 
 from .log import log
 from .ztp import ZTP
-from .utils import u2, u8
+from .utils import u4, u8
 from .kmc import count64
 
 from . import __version__
@@ -106,7 +106,7 @@ class GrowthProfiler:
                 self.meta[i] = sp[0], sp[4], int(sp[3]), int(sp[2])
 
     @staticmethod
-    def _collect(items, k, m, outdir, force, REC=struct.Struct('<QH')):
+    def _collect(items, k, m, outdir, force, REC=struct.Struct('<QI')):
         sample, files = items
         kmc = f'{outdir}/{sample}.kmc'
         if os.path.isfile(kmc) and not force:
@@ -127,7 +127,7 @@ class GrowthProfiler:
             with open(kmc, 'wb') as f:
                 for key, cnt in counts.items():
                     f.write(u8(key))
-                    f.write(u2(cnt))
+                    f.write(u4(cnt))
         return sample, counts
 
     @staticmethod
