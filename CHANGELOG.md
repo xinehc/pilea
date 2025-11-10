@@ -1,4 +1,10 @@
 # Changelog
+## [1.3.1] - 2025-11-10
+### Changed
+- Decode payloads of sketches only if necessary. This reduce peak memory usage for large databases.
+- Use 4 bytes for counts.
+
+
 ## [1.3.0] - 2025-10-30
 ### Changed
 - Remove dependency on `kmc` for k-mer counting.
