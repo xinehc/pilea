@@ -9,6 +9,7 @@ import multiprocessing as mp
 
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
+from tqdm.contrib.logging import logging_redirect_tqdm
 from collections import defaultdict
 from functools import partial
 from itertools import chain
@@ -108,8 +109,10 @@ class GrowthProfiler:
     @staticmethod
     def _collect(items, k, m, outdir, force, REC=struct.Struct('<QI')):
         sample, files = items
+        msg = ''
         kmc = f'{outdir}/{sample}.kmc'
         if os.path.isfile(kmc) and not force:
+            msg += f"File <{kmc}> exists, skip. Use <--force> for overwriting."
             with open(kmc, 'rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
                 counts = {key: cnt for (key, cnt) in REC.iter_unpack(mm)}
         else:
@@ -124,11 +127,16 @@ class GrowthProfiler:
                 for record1, record2 in zip(it1, it2):
                     count64(record1.seq, record2.seq, k, m, counts)
 
-            with open(kmc, 'wb') as f:
-                for key, cnt in counts.items():
-                    f.write(u8(key))
-                    f.write(u4(cnt))
-        return sample, counts
+                if next(it1, None) is not None or next(it2, None) is not None:
+                    msg += f'Sample <{sample}> is not properly paired, skip. Make sure <{files[0]}> and <{files[1]}> have equal numbers of reads.'
+                    counts.clear()
+
+            if counts:
+                with open(kmc, 'wb') as f:
+                    for key, cnt in counts.items():
+                        f.write(u8(key))
+                        f.write(u4(cnt))
+        return sample, counts, msg
 
     @staticmethod
     def _load(file, arr, REC=19, CHUNK_RECS=2500000):
@@ -287,17 +295,16 @@ class GrowthProfiler:
         Count, parse and filter.
         '''
         log.info('Counting k-mers ...')
-        kmc = [file for file in glob.glob(f'{self.outdir}/*.kmc') if os.path.basename(file).split('.kmc')[0] in self.items]
-        if kmc and not self.force:
-            log.info(f"File {' '.join(f'<{os.path.basename(file)}>' for file in kmc)} exists, skip. Use <--force> for overwriting.")
-
         arr = set()
         obs = dict()
         fun = partial(self._collect, k=self.k, m=self.m, outdir=self.outdir, force=self.force)
-        with mp.Pool(self.threads) as pool:
-            for sample, counts in tqdm(pool.imap_unordered(fun, self.items.items(), chunksize=1), total=len(self.items), leave=False):
-                obs[sample] = counts
-                arr.update(counts.keys())
+        with logging_redirect_tqdm():
+            with mp.Pool(self.threads) as pool:
+                for sample, counts, msg in tqdm(pool.imap_unordered(fun, self.items.items(), chunksize=1), total=len(self.items), leave=False):
+                    obs[sample] = counts
+                    arr.update(counts.keys())
+                    if msg:
+                        log.warning(msg)
 
         arr = np.fromiter(arr, dtype='<u8', count=len(arr))
         arr.sort()
