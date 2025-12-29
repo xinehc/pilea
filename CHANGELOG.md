@@ -1,4 +1,9 @@
 # Changelog
+## [1.3.3] - 2025-12-26
+### Changed
+- Assert input files have unique filenames.
+
+
 ## [1.3.2] - 2025-11-15
 ### Changed
 - Assert pair-end samples have equal numbers of forward/reverse reads.

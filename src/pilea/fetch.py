@@ -10,7 +10,7 @@ def fetch(outdir, threads=os.cpu_count()):
     '''
     Donwload pre-built database from Zenodo.
     '''
-    record = 15596115
+    record = 18061130
     stdout = subprocess.run([
         'wget', '-qO-', f'https://doi.org/10.5281/zenodo.{record}',
     ], check=True, capture_output=True, text=True).stdout

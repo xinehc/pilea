@@ -24,7 +24,7 @@ tar -xvf example.tar.gz && cd example
 <ins>***Step 1: Indexing***</ins>
 
 > [!TIP]
-> If MAGs aren't available, use `pilea fetch` to download a pre-built [GTDB database](https://doi.org/10.5281/zenodo.15596115). This reference database was constructed with `pilea rebuild`. If MAGs are available, they can be merged with the GTDB database via `-d/--database`. See `pilea index -h` for details.
+> If MAGs aren't available, use `pilea fetch` to download a pre-built [GTDB database](https://doi.org/10.5281/zenodo.18061130). This reference database was constructed with `pilea rebuild`. If MAGs are available, they can be merged with the GTDB database via `-d/--database`. See `pilea index -h` for details.
 
 The taxonomy mapping file (`-a/--taxonomy`) is optional. If provided, it needs to be a tab-separated file containing at least two columns (genome and its associated taxonomy). This file can be the output of GTDB-Tk (`gtdbtk.bac120.summary.tsv`) and should include only bacteria (no archaea or non-prokaryotes). MAGs must have extensions in `.(fa|fna|fasta)`.
 

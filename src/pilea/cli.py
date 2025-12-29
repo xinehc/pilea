@@ -13,9 +13,8 @@ from .log import log
 ArgumentDefaultsRichHelpFormatter.styles['argparse.prog'] = 'default'
 ArgumentDefaultsRichHelpFormatter.styles['argparse.default'] = 'grey50'
 ArgumentDefaultsRichHelpFormatter.styles['argparse.metavar'] = 'grey50'
-ArgumentDefaultsRichHelpFormatter.styles['argparse.groups'] = '#DF8080'
-ArgumentDefaultsRichHelpFormatter.styles['argparse.args'] = '#85C2DE'
-
+ArgumentDefaultsRichHelpFormatter.styles['argparse.groups'] = '#8DB600'
+ArgumentDefaultsRichHelpFormatter.styles['argparse.args'] = 'default'
 
 def parser_index(parser):
     parser_index = parser.add_parser(

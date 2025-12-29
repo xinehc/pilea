@@ -39,11 +39,6 @@ class GrowthProfiler:
         self.database = database
 
         ## sanity check
-        if os.path.isdir(outdir):
-            log.warning(f'Output directory <{outdir}> exists.')
-        else:
-            os.makedirs(outdir, exist_ok=True)
-
         if not os.path.isdir(database):
             log.critical(f'Database directory <{database}> does not exist.')
             sys.exit(2)
@@ -61,9 +56,18 @@ class GrowthProfiler:
         ## determine file format
         samples = [re.sub('.gz$', '', os.path.basename(file)) for file in files]
         extensions = {sample.split('.')[-1] for sample in samples}
-        if len(extensions) != 1 or not {'fasta', 'fa', 'fastq', 'fq'} & extensions:
-            log.critical('Input files need to end with <fa|fq|fasta|fastq>.')
+        if not extensions == extensions & {'fasta', 'fa', 'fastq', 'fq'}:
+            log.critical('Input files need to have extensions in <fa|fq|fasta|fastq>.')
             sys.exit(2)
+
+        if len(extensions) != 1:
+            log.critical('Input files have mixed extensions.')
+            sys.exit(2)
+
+        if len(samples) > len(set(samples)):
+            log.critical('Input files have duplicated names.')
+            sys.exit(2)
+
         extension = extensions.pop()
 
         if not single:
@@ -105,6 +109,11 @@ class GrowthProfiler:
             for i, line in enumerate(f.readlines()):
                 sp = line.rstrip().split('\t')
                 self.meta[i] = sp[0], sp[4], int(sp[3]), int(sp[2])
+
+        if os.path.isdir(outdir):
+            log.warning(f'Output directory <{outdir}> exists.')
+        else:
+            os.makedirs(outdir, exist_ok=True)
 
     @staticmethod
     def _collect(items, k, m, outdir, force, REC=struct.Struct('<QI')):
