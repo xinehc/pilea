@@ -1,4 +1,12 @@
 # Changelog
+## [1.3.4] - 2026-01-01
+### Added
+- Add tie-breaker for genomes maximizing containment.
+
+### Changed
+- Remove dependency on `needletail`.
+
+
 ## [1.3.3] - 2025-12-26
 ### Changed
 - Assert input files have unique filenames.
