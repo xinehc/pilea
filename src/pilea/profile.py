@@ -198,7 +198,7 @@ class GrowthProfiler:
                 del kd[gid]
 
         while kd:
-            ba = max(kd, key=lambda gid: kc.get(gid, 0) + len(kd[gid]) / meta[gid][-1])
+            ba = max(kd, key=lambda gid: (kc.get(gid, 0) + len(kd[gid]) / meta[gid][-1], gid))
             bs = kd.pop(ba)
 
             sa = set()
