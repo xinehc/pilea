@@ -9,12 +9,11 @@ authors = [
 ]
 readme = "README.md"
 description = "Pilea: profiling bacterial growth dynamics from metagenomes with sketching"
-license = {file = "LICENSE"}
+license = "MIT"
 dynamic = ["version"]
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 dependencies = [
     "tqdm",
-    "needletail",
     "statsmodels",
     "scikit-learn",
     "rich-argparse",
@@ -31,6 +30,12 @@ version = {attr = "pilea.__version__"}
 name = "pilea.kmc"
 sources = ["src/pilea/kmc.pyx"]
 language = "c"
+
+[[tool.setuptools.ext-modules]]
+name = "pilea.parse"
+sources = ["src/pilea/parse.pyx"]
+language = "c"
+libraries = ["z"]
 
 [tool.cython]
 language_level = "3"

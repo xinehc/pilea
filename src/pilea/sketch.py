@@ -1,11 +1,14 @@
 import os
 import numpy as np
+from collections import Counter, defaultdict
 
 from .kmc import hash64
+from .parse import parse_fastx_file
 from .utils import u1, u2, u4, u8
 
-from collections import Counter, defaultdict
-from needletail import parse_fastx_file
+GC_LUT = np.zeros(256, dtype=np.int32)
+GC_LUT[ord(b'G')] = 1; GC_LUT[ord(b'g')] = 1
+GC_LUT[ord(b'C')] = 1; GC_LUT[ord(b'c')] = 1
 
 
 def scan(center, gc_prefix, flank=500):
@@ -20,14 +23,12 @@ def sketch(file, folder, k, s, w):
 
     kctg = defaultdict(list)
     kcnt = Counter()
-    for cid, record in enumerate(parse_fastx_file(file)):
-        seq = record.seq
-        s = np.frombuffer(seq.encode('ascii'), np.uint8)
-        gc_prefix = np.r_[np.int32(0), np.cumsum((s == 71) | (s == 103) | (s == 67) | (s == 99), dtype=np.int32)]
-        for i in range(len(seq) - k + 1):
-            if (key := hash64(seq[i:i + k])) < maxhash:
-                kcnt[key] += 1
-                kctg[(cid, i // w)].append((key, scan(i + k // 2, gc_prefix)))
+    for cid, seq in enumerate(parse_fastx_file(file)):
+        s = np.frombuffer(seq, dtype=np.uint8)
+        gc_prefix = np.r_[np.int32(0), np.cumsum(GC_LUT[s], dtype=np.int32)]
+        for i, key in hash64(seq, k, maxhash):
+            kcnt[key] += 1
+            kctg[(cid, i // w)].append((key, scan(i + k // 2, gc_prefix)))
 
     win = 0
     kdup = {key for key, val in kcnt.items() if val > 1}

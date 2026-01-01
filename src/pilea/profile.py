@@ -16,13 +16,14 @@ from itertools import chain
 from sklearn.linear_model import RANSACRegressor
 from scipy.stats import median_abs_deviation, iqr
 from statsmodels.nonparametric.smoothers_lowess import lowess
-from needletail import parse_fastx_file
+
 import packaging
 
 from .log import log
 from .ztp import ZTP
 from .utils import u4, u8
 from .kmc import count64
+from .parse import parse_fastx_file
 
 from . import __version__
 
@@ -129,12 +130,12 @@ class GrowthProfiler:
             if len(files) == 1:
                 it = parse_fastx_file(files[0])
                 for record in it:
-                    count64(record.seq, '', k, m, counts)
+                    count64(record, None, k, m, counts)
             else:
                 it1 = parse_fastx_file(files[0])
                 it2 = parse_fastx_file(files[1])
                 for record1, record2 in zip(it1, it2):
-                    count64(record1.seq, record2.seq, k, m, counts)
+                    count64(record1, record2, k, m, counts)
 
                 if next(it1, None) is not None or next(it2, None) is not None:
                     msg += f'Sample <{sample}> is not properly paired, skip. Make sure <{files[0]}> and <{files[1]}> have equal numbers of reads.'

@@ -9,12 +9,12 @@ from . import __version__
 from . import index, fetch, profile, rebuild
 from .log import log
 
-## customize formatter
 ArgumentDefaultsRichHelpFormatter.styles['argparse.prog'] = 'default'
 ArgumentDefaultsRichHelpFormatter.styles['argparse.default'] = 'grey50'
 ArgumentDefaultsRichHelpFormatter.styles['argparse.metavar'] = 'grey50'
 ArgumentDefaultsRichHelpFormatter.styles['argparse.groups'] = '#8DB600'
 ArgumentDefaultsRichHelpFormatter.styles['argparse.args'] = 'default'
+
 
 def parser_index(parser):
     parser_index = parser.add_parser(
