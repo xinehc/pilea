@@ -230,12 +230,12 @@ class GrowthProfiler:
             q1, q3 = np.percentile(x, [25, 75])
             lower, upper = q1 - 1.5 * (q3 - q1), q3 + 1.5 * (q3 - q1)
 
-            x = np.rint(2 ** x[(x >= lower) & (x <= upper)]).astype(np.uint16)
+            x = np.rint(2 ** x[(x >= lower) & (x <= upper)]).astype(np.uint32)
             return (2 ** lower, 2 ** upper) if return_limits else x
 
         def _debias(x, y, frac=0.25):
             t = lowess(exog=x, endog=y, frac=frac)[:, 1]
-            y = np.rint(2 ** (np.asarray(y) - t + np.mean(t))).astype(np.uint16)
+            y = np.rint(2 ** (np.asarray(y) - t + np.mean(t))).astype(np.uint32)
             return y
 
         A = []
