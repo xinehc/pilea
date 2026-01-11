@@ -11,7 +11,7 @@ GC_LUT[ord(b'G')] = 1; GC_LUT[ord(b'g')] = 1
 GC_LUT[ord(b'C')] = 1; GC_LUT[ord(b'c')] = 1
 
 
-def scan(center, gc_prefix, flank=500):
+def scan(center, gc_prefix, flank=250):
     n = len(gc_prefix) - 1
     l = 0 if center - flank < 0 else center - flank
     r = n if center + flank > n else center + flank

@@ -233,7 +233,7 @@ class GrowthProfiler:
             x = np.rint(2 ** x[(x >= lower) & (x <= upper)]).astype(np.uint32)
             return (2 ** lower, 2 ** upper) if return_limits else x
 
-        def _debias(x, y, frac=0.25):
+        def _debias(x, y, frac=0.5):
             t = lowess(exog=x, endog=y, frac=frac)[:, 1]
             y = np.rint(2 ** (np.asarray(y) - t + np.mean(t))).astype(np.uint32)
             return y
