@@ -6,7 +6,7 @@ from .kmc import hash64
 from .parse import parse_fastx_file
 from .utils import u1, u2, u4, u8
 
-GC_LUT = np.zeros(256, dtype=np.int32)
+GC_LUT = np.zeros(256, dtype=np.uint32)
 GC_LUT[ord(b'G')] = 1; GC_LUT[ord(b'g')] = 1
 GC_LUT[ord(b'C')] = 1; GC_LUT[ord(b'c')] = 1
 
@@ -25,7 +25,7 @@ def sketch(file, folder, k, s, w):
     kcnt = Counter()
     for cid, seq in enumerate(parse_fastx_file(file)):
         s = np.frombuffer(seq, dtype=np.uint8)
-        gc_prefix = np.r_[np.int32(0), np.cumsum(GC_LUT[s], dtype=np.int32)]
+        gc_prefix = np.r_[np.uint32(0), np.cumsum(GC_LUT[s], dtype=np.uint32)]
         for i, key in hash64(seq, k, maxhash):
             kcnt[key] += 1
             kctg[(cid, i // w)].append((key, scan(i + k // 2, gc_prefix)))
