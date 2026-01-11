@@ -39,5 +39,5 @@ def xtar(file, folder, threads=os.cpu_count()):
 
 def ctar(file, folder, threads=os.cpu_count()):
     subprocess.run([
-        'tar', '-I', f'pigz -p {threads} --best', '-C', folder, '--sort=name', '-cf', f'{folder}/{file}.tar.gz', file
+        'tar', '-I', f'pigz -p {threads} --best --no-name', '-C', folder, '--sort=name', '-cf', f'{folder}/{file}.tar.gz', file
     ], check=True)
