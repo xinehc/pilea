@@ -1,4 +1,10 @@
 # Changelog
+## [1.3.5] - 2026-01-11
+### Changed
+- Adjust gc frac and window.
+- Reset default `-s` back to 250.
+
+
 ## [1.3.4] - 2026-01-01
 ### Added
 - Add tie-breaker for genomes maximizing containment.
