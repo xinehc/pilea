@@ -17,15 +17,12 @@ from sklearn.linear_model import RANSACRegressor
 from scipy.stats import median_abs_deviation, iqr
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-import packaging
 
 from .log import log
 from .ztp import ZTP
 from .utils import u4, u8
 from .kmc import count64
 from .parse import parse_fastx_file
-
-from . import __version__
 
 
 class GrowthProfiler:
@@ -98,12 +95,6 @@ class GrowthProfiler:
                     self.m = ((1 << 64) - 1) // self.s
                 elif line[0] == 'w':
                     self.w = int(line.split()[-1])
-                elif line[0] == 'v':
-                    self.v = packaging.version.parse(line.split()[-1])
-
-        if (v := packaging.version.parse(__version__)) < self.v:
-            log.critical(f'Database <{database}> requires <v{self.v}> or above.')
-            sys.exit(2)
 
         self.meta = dict()
         with open(f'{self.database}/genomes.tab') as f:

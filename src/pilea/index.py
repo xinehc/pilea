@@ -6,12 +6,10 @@ import re
 
 from tqdm.contrib.concurrent import process_map
 from functools import partial
-import packaging
 
 from .utils import ctar
 from .sketch import sketch
 from .log import log
-from . import __version__
 
 
 def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=250, w=25000, threads=os.cpu_count()):
@@ -47,15 +45,9 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
 
         with open(f'{database}/parameters.tab') as f:
             for line in f:
-                if line[0] == 'v':
-                    version = packaging.version.parse(line.split()[-1])
-                    if packaging.version.parse(__version__) < version:
-                        log.critical(f'Database <{database}> requires <v{version}> or above.')
-                        sys.exit(2)
-                else:
-                    if int(line.split()[-1]) != locals()[line[0]]:
-                        log.critical(f'Parameter <{line[0]}> does not match.')
-                        sys.exit(2)
+                if int(line.split()[-1]) != locals()[line[0]]:
+                    log.critical(f'Parameter <{line[0]}> does not match.')
+                    sys.exit(2)
 
         with open(f'{database}/genomes.tab') as f:
             n = sum(1 for _ in f)
@@ -87,7 +79,7 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
 
     log.info('Writing ...')
     with open(f'{outdir}/parameters.tab', 'w') as f:
-        f.write(f'k\t{k}\ns\t{s}\nw\t{w}\nv\t{__version__}\n')
+        f.write(f'k\t{k}\ns\t{s}\nw\t{w}\n')
 
     with open(f'{outdir}/genomes.tab', 'w') as f:
         for file in [file[1] for file in files]:
