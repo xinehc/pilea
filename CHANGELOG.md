@@ -1,4 +1,10 @@
 # Changelog
+## [1.3.6] - 2026-01-13
+### Changed
+- Remove packaging.
+- Use iqr not idr for filtering.
+
+
 ## [1.3.5] - 2026-01-11
 ### Changed
 - Adjust gc frac and window.
