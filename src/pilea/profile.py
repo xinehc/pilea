@@ -115,7 +115,7 @@ class GrowthProfiler:
         if os.path.isfile(kmc) and not force:
             msg += f"File <{kmc}> exists, skip. Use <--force> for overwriting."
             with open(kmc, 'rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                counts = {key: cnt for (key, cnt) in REC.iter_unpack(mm)}
+                counts = dict(REC.iter_unpack(mm))
         else:
             counts = {}
             if len(files) == 1:
@@ -284,7 +284,7 @@ class GrowthProfiler:
             R = median_abs_deviation(Y) / 5
             v.append(_ransac(X, Y, R, seed=i))
 
-        if iqr(v, rng=(10, 90)) < 1:
+        if iqr(v) < 0.5:
             Y = np.log2(sorted(y[np.argmax(p)] for y, p in u))
             R = median_abs_deviation(Y) / 5
             for i in range(100):
