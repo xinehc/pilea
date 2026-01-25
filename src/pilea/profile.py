@@ -17,12 +17,11 @@ from sklearn.linear_model import RANSACRegressor
 from scipy.stats import median_abs_deviation, iqr
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-
 from .log import log
 from .ztp import ZTP
 from .utils import u4, u8
 from .kmc import count64
-from .parse import parse_fastx_file
+from .io import parse_fastx_file, load_pdb, load_kmc
 
 
 class GrowthProfiler:
@@ -108,14 +107,13 @@ class GrowthProfiler:
             os.makedirs(outdir, exist_ok=True)
 
     @staticmethod
-    def _collect(items, k, m, outdir, force, REC=struct.Struct('<QI')):
+    def _collect(items, k, m, outdir, force):
         sample, files = items
         msg = ''
         kmc = f'{outdir}/{sample}.kmc'
         if os.path.isfile(kmc) and not force:
             msg += f"File <{kmc}> exists, skip. Use <--force> for overwriting."
-            with open(kmc, 'rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                counts = dict(REC.iter_unpack(mm))
+            counts = load_kmc(kmc)
         else:
             counts = {}
             if len(files) == 1:
@@ -138,34 +136,6 @@ class GrowthProfiler:
                         f.write(u8(key))
                         f.write(u4(cnt))
         return sample, counts, msg
-
-    @staticmethod
-    def _load(file, arr, REC=19, CHUNK_RECS=2500000):
-        pdb = defaultdict(bytearray)
-        if arr.size == 0:
-            return pdb
-
-        buf = bytearray(CHUNK_RECS * REC)
-        total_recs = os.path.getsize(file) // REC
-        total_chunks = (total_recs + CHUNK_RECS - 1) // CHUNK_RECS
-        with open(file, 'rb') as f, tqdm(total=total_chunks, leave=False) as pbar:
-            while True:
-                nbytes = f.readinto(buf)
-                if nbytes <= 0:
-                    break
-
-                n = nbytes // REC
-                rows = np.frombuffer(buf, dtype=np.uint8, count=n * REC).reshape(n, REC)
-                keys = rows[:, :8].view('<u8').ravel()
-
-                order = np.argsort(keys)
-                mask = np.isin(keys[order], arr, assume_unique=True)
-
-                for i in order[np.flatnonzero(mask)]:
-                    pdb[int(keys[i])].extend(rows[i, 8:19])
-
-                pbar.update(1)
-        return pdb
 
     @staticmethod
     def _assign(kmc, pdb, meta, min_cont):
@@ -296,22 +266,17 @@ class GrowthProfiler:
         Count, parse and filter.
         '''
         log.info('Counting k-mers ...')
-        arr = set()
         obs = dict()
         fun = partial(self._collect, k=self.k, m=self.m, outdir=self.outdir, force=self.force)
         with logging_redirect_tqdm():
             with mp.Pool(self.threads) as pool:
                 for sample, counts, msg in tqdm(pool.imap_unordered(fun, self.items.items(), chunksize=1), total=len(self.items), leave=False):
                     obs[sample] = counts
-                    arr.update(counts.keys())
                     if msg:
                         log.warning(msg)
 
-        arr = np.fromiter(arr, dtype='<u8', count=len(arr))
-        arr.sort()
-
         log.info('Loading database ...')
-        pdb = self._load(f'{self.database}/sketches.pdb', arr)
+        pdb = load_pdb(f'{self.database}/sketches.pdb', obs)
 
         log.info('Parsing and filtering outputs ...')
         for sample in tqdm(list(obs.keys()), leave=False):

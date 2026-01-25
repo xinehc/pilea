@@ -3,7 +3,7 @@ import numpy as np
 from collections import Counter, defaultdict
 
 from .kmc import hash64
-from .parse import parse_fastx_file
+from .io import parse_fastx_file
 from .utils import u1, u2, u4, u8
 
 GC_LUT = np.zeros(256, dtype=np.uint32)

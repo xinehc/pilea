@@ -32,8 +32,8 @@ sources = ["src/pilea/kmc.pyx"]
 language = "c"
 
 [[tool.setuptools.ext-modules]]
-name = "pilea.parse"
-sources = ["src/pilea/parse.pyx"]
+name = "pilea.io"
+sources = ["src/pilea/io.pyx"]
 language = "c"
 libraries = ["z"]
 

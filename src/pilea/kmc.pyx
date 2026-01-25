@@ -1,4 +1,4 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, language_level=3
+# cython: language_level=3, boundscheck=False, wraparound=False, initializedcheck=False
 
 from libc.stdint cimport uint64_t, uint8_t
 from cpython.bytes cimport PyBytes_AsStringAndSize
@@ -29,13 +29,11 @@ ctypedef fused OutputContainer:
     list
 
 cdef void _scan(const uint8_t* s, Py_ssize_t n, int k, uint64_t maxhash, OutputContainer out) except *:
-    cdef uint64_t f = 0, r = 0, canon, h, mask
-    cdef int valid = 0, top_shift
-    cdef Py_ssize_t i
-    cdef uint8_t code
-
-    top_shift = 2 * (k - 1)
-    mask = ((<uint64_t>1) << (2 * k)) - 1
+    cdef:
+        uint64_t f = 0, r = 0, c, h, mask = (1ULL << (2 * k)) - 1
+        int valid = 0, top_shift = 2 * (k - 1)
+        Py_ssize_t i
+        uint8_t code
 
     for i in range(n):
         code = BASE_MAP[s[i]]
@@ -47,42 +45,47 @@ cdef void _scan(const uint8_t* s, Py_ssize_t n, int k, uint64_t maxhash, OutputC
         f = ((f << 2) | code) & mask
         r = _rc(r, code, top_shift)
         if valid >= k:
-            canon = f if f <= r else r
-            h = _hash(canon)
+            c = f if f <= r else r
+            h = _hash(c)
             if h < maxhash:
                 if OutputContainer is list:
                     out.append((i - k + 1, h))
                 else:
                     out.add(h)
 
-cpdef void count64(bytes a, bytes b, int k, uint64_t maxhash, dict counts) except *:
+def count64(bytes seq_a, bytes seq_b, int k, uint64_t maxhash, dict counts):
     '''
     Count unique FracMinHash k-mers from single or paired reads.
     '''
-    cdef Py_ssize_t n
-    cdef char* buffer
-    cdef set tmp = set()
+    cdef:
+        Py_ssize_t n
+        char* b
+        set tmp = set()
+        uint64_t key
 
-    PyBytes_AsStringAndSize(a, &buffer, &n)
-    _scan(<const uint8_t*>buffer, n, k, maxhash, tmp)
+    PyBytes_AsStringAndSize(seq_a, &b, &n)
+    _scan(<const uint8_t*>b, n, k, maxhash, tmp)
 
-    if b is not None:
-        PyBytes_AsStringAndSize(b, &buffer, &n)
-        _scan(<const uint8_t*>buffer, n, k, maxhash, tmp)
+    if seq_b is not None:
+        PyBytes_AsStringAndSize(seq_b, &b, &n)
+        _scan(<const uint8_t*>b, n, k, maxhash, tmp)
 
-    cdef uint64_t key
     for key in tmp:
-        counts[key] = counts.get(key, 0) + 1
+        if key in counts:
+            counts[key] += 1
+        else:
+            counts[key] = 1
 
-cpdef list hash64(bytes seq, int k, uint64_t maxhash):
+def hash64(bytes seq, int k, uint64_t maxhash):
     '''
     Store FracMinHash k-mers and their positions.
     '''
-    cdef Py_ssize_t n
-    cdef char* buffer
-    cdef list tmp = []
+    cdef:
+        Py_ssize_t n
+        char* b
+        list tmp = list()
 
-    PyBytes_AsStringAndSize(seq, &buffer, &n)
-    _scan(<const uint8_t*>buffer, n, k, maxhash, tmp)
+    PyBytes_AsStringAndSize(seq, &b, &n)
+    _scan(<const uint8_t*>b, n, k, maxhash, tmp)
 
     return tmp
