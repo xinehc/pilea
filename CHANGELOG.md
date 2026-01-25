@@ -1,4 +1,9 @@
 # Changelog
+## [1.3.7] - 2026-01-25
+### Changed
+- Rewrite io logic.
+
+
 ## [1.3.6] - 2026-01-13
 ### Changed
 - Remove packaging.
