@@ -1,4 +1,9 @@
 # Changelog
+## [1.3.8] - 2026-02-28
+### Changed
+- Output PTR with log2(PTR).
+
+
 ## [1.3.7] - 2026-01-25
 ### Changed
 - Rewrite io logic.

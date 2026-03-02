@@ -301,10 +301,10 @@ class GrowthProfiler:
         Write valid PTRs to output.
         '''
         with open(f'{self.outdir}/output.tsv', 'w') as f:
-            f.write('\t'.join(['sample', 'genome', 'taxonomy', 'coverage', 'dispersion', 'fraction', 'containment', 'ptr']) + '\n')
+            f.write('\t'.join(['sample', 'genome', 'taxonomy', 'coverage', 'dispersion', 'fraction', 'containment', 'PTR', 'log2(PTR)']) + '\n')
             for row in sorted(self.data, key=lambda row: (row[0], row[2], row[1])):
                 if row[-1] is not None:
-                    f.write('\t'.join(row[:3] + [f'{x:.4f}' for x in row[3:]]) + '\n')
+                    f.write('\t'.join(row[:3] + [f'{x:.4f}' for x in row[3:] + [np.log2(row[-1])]]) + '\n')
         log.info('Done.')
 
 def profile(files, outdir, database, force=False, single=False, min_cove=5, max_disp=np.inf, min_frac=0.75, min_cont=0.25, components=5, max_iter=np.inf, tol=1e-5, threads=os.cpu_count()):
