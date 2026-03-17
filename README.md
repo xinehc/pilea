@@ -43,3 +43,5 @@ Both FASTA (`fa|fasta`) and FASTQ (`fq|fastq`) files are supported. By default, 
 pilea profile *.fasta -d db -o .
 ```
 
+## Citation
+Chen, X., Xu, X., Lin, Y., Shi, X., Wang, D., & Zhang, T. (2026). Pilea: profiling bacterial growth dynamics from metagenomes with sketching. *Microbiome*. https://doi.org/10.1186/s40168-026-02374-0
