@@ -54,4 +54,4 @@ PTR estimates and other metadata for MAGs that pass basic filters will be saved 
 Coverage (`--min-cove`) represents the median per-window coverage estimated from sketched $k$-mers (lower than per-base coverage, depending on read length and $k$). Dispersion (`--max-disp`) and fraction (`--min-frac`) indicate the median per-window dispersion and the fraction of covered windows, respectively. Containment (`--min-cont`) is the proportion of sketched $k$-mers used for PTR estimation. See `pilea profile -h` for more details.
 
 ## Citation
-Chen, X., Xu, X., Lin, Y., Shi, X., Wang, D., & Zhang, T. (2026). Pilea: profiling bacterial growth dynamics from metagenomes with sketching. *Microbiome*. https://doi.org/10.1186/s40168-026-02374-0
+Chen, X., Xu, X., Lin, Y., Shi, X., Wang, D., & Zhang, T. (2026). Pilea: profiling bacterial growth dynamics from metagenomes with sketching. *Microbiome*, 14, 128. https://doi.org/10.1186/s40168-026-02374-0
