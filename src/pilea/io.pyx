@@ -2,7 +2,7 @@
 
 from libc.stdint cimport uint64_t, uint32_t, uint16_t, uint8_t
 from libc.stdio cimport fopen, fread, fclose, FILE
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport malloc, calloc, free
 
 
 cdef extern from *:
@@ -117,12 +117,16 @@ def load_pdb(str filename, dict obs):
     cdef:
         FILE* f
         uint8_t* b
+        uint8_t* seen
         size_t i, n, l, offset
         uint64_t key, observed_key
         kobs_t* k
         dict counts, pdb = {}
         int chunk = 10000000 * 19
 
+    # One bit per low 28-bit hash value (32 MiB).
+    seen = <uint8_t*> calloc(1 << 25, 1)
+    if seen == NULL: raise MemoryError()
     k = kobs_init()
     b = <uint8_t*> malloc(chunk)
     f = fopen(filename.encode('utf-8'), 'rb')
@@ -130,6 +134,7 @@ def load_pdb(str filename, dict obs):
         for counts in obs.values():
             for observed_key in counts:
                 kobs_add(k, <uint64_t>observed_key)
+                seen[(observed_key & 0xfffffff) >> 3] |= 1 << (observed_key & 7)
 
         while True:
             l = fread(b, 1, chunk, f)
@@ -139,13 +144,14 @@ def load_pdb(str filename, dict obs):
             for i in range(n):
                 offset = i * 19
                 key = (<uint64_t*> &b[offset])[0]
-                if kobs_has(k, key):
+                if (seen[(key & 0xfffffff) >> 3] & (1 << (key & 7))) and kobs_has(k, key):
                     if key in pdb:
                         pdb[key].extend(b[offset + 8 : offset + 19])
                     else:
                         pdb[key] = bytearray(b[offset + 8 : offset + 19])
         return pdb
     finally:
+        free(seen)
         if k != NULL: kobs_destroy(k)
         if f != NULL: fclose(f)
         if b != NULL: free(b)
