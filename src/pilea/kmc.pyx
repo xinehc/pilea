@@ -11,10 +11,10 @@ BASE_MAP[ord('C')] = 1; BASE_MAP[ord('c')] = 1
 BASE_MAP[ord('G')] = 2; BASE_MAP[ord('g')] = 2
 BASE_MAP[ord('T')] = 3; BASE_MAP[ord('t')] = 3
 
-cdef inline uint64_t _rc(uint64_t r, uint64_t code, int top_shift) nogil:
+cdef inline uint64_t _rc(uint64_t r, uint64_t code, int top_shift) noexcept nogil:
     return (r >> 2) | ((code ^ 0x3) << top_shift)
 
-cdef inline uint64_t _hash(uint64_t key) nogil:
+cdef inline uint64_t _hash(uint64_t key) noexcept nogil:
     key = (~key) + (key << 21)
     key ^= key >> 24
     key += (key << 3) + (key << 8)
@@ -61,7 +61,7 @@ def count64(bytes seq_a, bytes seq_b, int k, uint64_t maxhash, dict counts):
         Py_ssize_t n
         char* b
         set tmp = set()
-        uint64_t key
+        object key
 
     PyBytes_AsStringAndSize(seq_a, &b, &n)
     _scan(<const uint8_t*>b, n, k, maxhash, tmp)
@@ -71,10 +71,7 @@ def count64(bytes seq_a, bytes seq_b, int k, uint64_t maxhash, dict counts):
         _scan(<const uint8_t*>b, n, k, maxhash, tmp)
 
     for key in tmp:
-        if key in counts:
-            counts[key] += 1
-        else:
-            counts[key] = 1
+        counts[key] = counts.get(key, 0) + 1
 
 def hash64(bytes seq, int k, uint64_t maxhash):
     '''
