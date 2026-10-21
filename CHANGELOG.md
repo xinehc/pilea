@@ -1,4 +1,16 @@
 # Changelog
+## [1.3.9] - 2026-10-21
+### Added
+- Support `*.kmc` as input.
+- Add database prefilter.
+
+### Changed
+- Remove `np.isclose`.
+
+### Fixed
+- Fix a bug with k>31.
+
+
 ## [1.3.8] - 2026-02-28
 ### Changed
 - Output PTR with log2(PTR).
