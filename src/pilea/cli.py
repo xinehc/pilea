@@ -70,6 +70,7 @@ def parser_index(parser):
         dest='k',
         metavar='INT',
         type=int,
+        choices=range(1, 32),
         default=31,
         help='K-mer size.')
 
@@ -263,6 +264,7 @@ def parser_rebuild(parser):
         dest='k',
         metavar='INT',
         type=int,
+        choices=range(1, 32),
         default=31,
         help='K-mer size.')
 
