@@ -124,7 +124,6 @@ def load_pdb(str filename, dict obs):
         dict counts, pdb = {}
         int chunk = 10000000 * 19
 
-    # One bit per low 28-bit hash value (32 MiB).
     seen = <uint8_t*> calloc(1 << 25, 1)
     if seen == NULL: raise MemoryError()
     k = kobs_init()
