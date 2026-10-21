@@ -18,6 +18,8 @@ cdef extern from *:
     ctypedef void *gzFile
     gzFile gzopen(const char *path, const char *mode)
     int gzclose(gzFile file)
+    int gzread(gzFile file, void *buf, unsigned int len)
+    const char *gzerror(gzFile file, int *errnum)
 
     ctypedef struct kstring_t:
         size_t l
@@ -75,24 +77,31 @@ def parse_fastx_file(str filename):
 
 def load_kmc(str filename):
     '''
-    Load kmer counts into dict of int.
+    Load k-mer counts into dict of int (gzip optional).
     '''
     cdef:
-        FILE* f
+        gzFile f
         uint8_t* b
-        size_t i, n, l, offset
+        size_t i, n, offset
+        int l, error = 0
         uint64_t key
         uint32_t val
         dict counts = {}
         int chunk = 10000000 * 12
 
     b = <uint8_t*> malloc(chunk)
-    f = fopen(filename.encode('utf-8'), 'rb')
+    f = gzopen(filename.encode('utf-8'), 'rb')
     try:
         while True:
-            l = fread(b, 1, chunk, f)
-            if l == 0: break
+            l = gzread(f, b, chunk)
+            if l <= 0:
+                gzerror(f, &error)
+                if l < 0 or error:
+                    raise OSError(f'Error reading k-mer counts from {filename}.')
+                break
 
+            if l % 12:
+                raise ValueError(f'Incomplete k-mer record in {filename}.')
             n = l // 12
             for i in range(n):
                 offset = i * 12
@@ -101,7 +110,7 @@ def load_kmc(str filename):
                 counts[key] = val
         return counts
     finally:
-        if f != NULL: fclose(f)
+        if f != NULL: gzclose(f)
         if b != NULL: free(b)
 
 def load_pdb(str filename, dict obs):

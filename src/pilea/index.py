@@ -38,6 +38,10 @@ def index(files, outdir, taxonomy=None, compress=False, database=None, k=31, s=2
             log.critical(f'Folder <{database}> does not exist.')
             sys.exit(2)
 
+        if os.path.isdir(outdir) and os.path.samefile(database, outdir):
+            log.critical('Output directory must differ from database directory.')
+            sys.exit(2)
+
         for file in ['parameters.tab', 'genomes.tab', 'sketches.pdb']:
             if not os.path.isfile(f'{database}/{file}'):
                 log.critical(f'File <{file}> does not exist under <{database}>.')

@@ -12,7 +12,7 @@ from tqdm.contrib.concurrent import process_map
 from tqdm.contrib.logging import logging_redirect_tqdm
 from collections import defaultdict
 from functools import partial
-from itertools import chain
+from itertools import chain, zip_longest
 from sklearn.linear_model import RANSACRegressor
 from scipy.stats import median_abs_deviation, iqr
 from statsmodels.nonparametric.smoothers_lowess import lowess
@@ -53,8 +53,8 @@ class GrowthProfiler:
         ## determine file format
         samples = [re.sub('.gz$', '', os.path.basename(file)) for file in files]
         extensions = {sample.split('.')[-1] for sample in samples}
-        if not extensions == extensions & {'fasta', 'fa', 'fastq', 'fq'}:
-            log.critical('Input files need to have extensions in <fa|fq|fasta|fastq>.')
+        if not extensions == extensions & {'fasta', 'fa', 'fastq', 'fq', 'kmc'}:
+            log.critical('Input files need to have extensions in <fa|fq|fasta|fastq|kmc>.')
             sys.exit(2)
 
         if len(extensions) != 1:
@@ -67,7 +67,7 @@ class GrowthProfiler:
 
         extension = extensions.pop()
 
-        if not single:
+        if not single and extension != 'kmc':
             samples = [re.sub(rf'(_(1|2|R1|R2|fwd|rev))?.{extension}$', '', sample) for sample in samples]
         else:
             samples = [re.sub(rf'.{extension}$', '', sample) for sample in samples]
@@ -109,6 +109,9 @@ class GrowthProfiler:
     @staticmethod
     def _collect(items, k, m, outdir, force):
         sample, files = items
+        if files[0].endswith(('.kmc', '.kmc.gz')):
+            return sample, load_kmc(files[0]), ''
+
         msg = ''
         kmc = f'{outdir}/{sample}.kmc'
         if os.path.isfile(kmc) and not force:
@@ -123,12 +126,12 @@ class GrowthProfiler:
             else:
                 it1 = parse_fastx_file(files[0])
                 it2 = parse_fastx_file(files[1])
-                for record1, record2 in zip(it1, it2):
+                for record1, record2 in zip_longest(it1, it2):
+                    if record1 is None or record2 is None:
+                        msg += f'Sample <{sample}> is not properly paired, skip. Make sure <{files[0]}> and <{files[1]}> have equal numbers of reads.'
+                        counts.clear()
+                        break
                     count64(record1, record2, k, m, counts)
-
-                if next(it1, None) is not None or next(it2, None) is not None:
-                    msg += f'Sample <{sample}> is not properly paired, skip. Make sure <{files[0]}> and <{files[1]}> have equal numbers of reads.'
-                    counts.clear()
 
             if counts:
                 with open(kmc, 'wb') as f:

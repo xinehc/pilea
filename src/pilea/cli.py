@@ -135,7 +135,7 @@ def parser_profile(parser):
         dest='files',
         nargs='+',
         metavar='file',
-        help='Input fasta <*.fa|*.fasta> or fastq <*.fq|*.fastq> file(s), gzip optional <*.gz>.')
+        help='Input fasta <*.fa|*.fasta> or fastq <*.fq|*.fastq> or count <*.kmc> file(s), gzip optional <*.gz>.')
 
     required = parser_profile.add_argument_group('required arguments')
     required.add_argument(
