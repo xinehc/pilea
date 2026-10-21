@@ -39,7 +39,7 @@ class ZTP:
 
             ## test for log-likelihood convergence
             logl = np.sum(np.log(mix_probs))
-            if np.isclose(logl, old_logl, atol=tol, rtol=0):
+            if abs(logl - old_logl) <= tol:
                 break
             old_logl = logl
 
@@ -48,7 +48,7 @@ class ZTP:
             Z = R.T.dot(self.x) / R.sum(axis=0)
             for _ in range(max_iter):
                 lmds = Z * (-np.expm1(-old_lmds))
-                if np.allclose(lmds, old_lmds, atol=tol, rtol=0):
+                if np.all(np.abs(lmds - old_lmds) <= tol):
                     break
                 old_lmds = lmds.copy()
 
